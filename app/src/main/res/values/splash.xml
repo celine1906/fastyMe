@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <style name="Theme.MyApp.MySplash" parent="Theme.SplashScreen">
+<!--        <item name="windowSplashScreenBackground">@drawable/gradient_splash_bg</item>-->
+        <item name="android:windowSplashScreenBackground">#5624C4</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/fastylogo</item>
+        <item name="android:animationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.FastyMe</item>
+    </style>
+</resources>

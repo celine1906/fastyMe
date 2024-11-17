@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.fastyme"
-        minSdk = 34
+        minSdk = 31
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -76,4 +76,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     var fakerVersion = "1.16.0"
     implementation("io.github.serpro69:kotlin-faker:$fakerVersion")
+
+    //Dependencies untuk Splash API
+    implementation("androidx.core:core-splashscreen:1.0.0")
 }
