@@ -37,7 +37,7 @@ import kotlinx.serialization.Serializable
 object Dashboard
 
 @Composable
-fun FastingAppUI(navController: NavController) {
+fun FastingAppUI(modifier: Modifier,navController: NavController,authViewModel: AuthViewModel) {
     // Main background with a purple accent circle timer
     Column(
         modifier = Modifier

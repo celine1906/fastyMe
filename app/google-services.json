@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "356726973366",
+    "project_id": "fastymedb",
+    "storage_bucket": "fastymedb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:356726973366:android:47255a79ac0ad6e01f5717",
+        "android_client_info": {
+          "package_name": "com.example.fastyme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlf9Yc0ypuL8_iEId5P9TUyU8rFzi-TMs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

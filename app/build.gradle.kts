@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -53,6 +54,10 @@ android {
 
 dependencies {
     implementation(libs.androidx.room.ktx)
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.runtime.livedata)
     val nav_version = "2.8.2"
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
@@ -79,4 +84,14 @@ dependencies {
 
     //Dependencies untuk Splash API
     implementation("androidx.core:core-splashscreen:1.0.0")
+
+    implementation ("androidx.compose.ui:ui:1.5.1")
+    implementation ("androidx.compose.foundation:foundation:1.5.1")
+    implementation ("androidx.compose.material3:material3:1.1.0") // pastikan versi terbaru
+    implementation ("com.google.firebase:firebase-firestore-ktx")
+
+
+
+
+
 }
