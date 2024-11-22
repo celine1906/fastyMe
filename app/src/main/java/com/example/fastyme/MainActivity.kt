@@ -3,6 +3,8 @@ package com.example.fastyme
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -21,11 +23,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
+import com.example.fastyme.ui.theme.FastyMeTheme
 
 
 @Composable
@@ -135,12 +139,12 @@ fun bottomNavBar(navHostController: NavHostController) {
             innerPadding ->
         NavHost(
             navController = navHostController,
-            startDestination = Dashboard,
+            startDestination = "registerPage",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable<Dashboard> {
-                FastingAppUI(navHostController)
-            }
+//            composable<Dashboard> {
+//                FastingAppUI(navHostController)
+//            }
             composable<Fasting> {
                 FastingPage()
             }
@@ -153,6 +157,12 @@ fun bottomNavBar(navHostController: NavHostController) {
             composable<Profile> {
                 ProfilePage()
             }
+//            composable("registerPage") {
+//                RegisterPage(modifier, navController, authViewModel)
+//            }
+//            composable("loginPage") {
+//                LoginPage(modifier, navController)
+//            }
 
         }
     }
@@ -162,9 +172,14 @@ fun bottomNavBar(navHostController: NavHostController) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installSplashScreen()
+        val authViewModel : AuthViewModel by viewModels()
         setContent {
-            val navController = rememberNavController()
-            bottomNavBar(navController)
+            FastyMeTheme {
+                Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding->
+                    MyAppNavigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel)
+                }
+            }
         }
     }
 }
