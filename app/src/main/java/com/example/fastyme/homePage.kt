@@ -140,6 +140,9 @@ fun FastingAppUI(navController: NavController) {
     }
 }
 
+//class CountDownTimer : ViewModel() {}
+
+
 @Composable
 fun TimeOption(label: String, time: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

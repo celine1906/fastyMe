@@ -53,6 +53,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.ui.test.android)
+    implementation(libs.androidx.ui.test.android)
     val nav_version = "2.8.2"
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
