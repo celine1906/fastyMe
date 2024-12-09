@@ -143,7 +143,7 @@ fun bottomNavBar(navHostController: NavHostController) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable<Dashboard> {
-                FastingAppUI()
+                FastingAppUI(navHostController)
             }
             composable<Fasting> {
                 FastingPage()
@@ -157,6 +157,9 @@ fun bottomNavBar(navHostController: NavHostController) {
             composable<Profile> {
                 ProfilePage()
             }
+            composable("homeScreen") { FastingAppUI(navHostController) }
+            composable("waterIntake") { WaterIntake() }
+            composable("calorieIntake") { CalorieIntake() }
         }
     }
 }
@@ -169,13 +172,13 @@ class MainActivity : ComponentActivity() {
         val authViewModel : AuthViewModel by viewModels()
 
         setContent {
-//            FastyMeTheme {
+            FastyMeTheme {
             val navController = rememberNavController()
             bottomNavBar(navController)
 //                Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding->
-//                    MyAppNavigation(modifier = Modifier.padding(), authViewModel = authViewModel)
+//                    MyAppNavigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel)
 //                }
-//            }
+            }
         }
     }
 }

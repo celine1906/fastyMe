@@ -53,6 +53,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
@@ -69,7 +74,7 @@ import kotlin.math.sin
 object Dashboard
 
 @Composable
-fun FastingAppUI() {
+fun FastingAppUI(navController: NavController) {
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("12:12") }
     var valueSelected by remember { mutableStateOf(12) }
@@ -132,8 +137,8 @@ fun FastingAppUI() {
 
             ) {
                 Canvas(modifier=Modifier.fillMaxSize()) {
-                    val progress = currentTime.toFloat()/(valueSelected*60*60)
-                    val sweepAngle = 360 * (currentTime / progress )
+                    val value = currentTime.toFloat()/(valueSelected*60*60)
+                    val sweepAngle = 360f * value
                     drawArc(
                         color = Color.LightGray,
                         startAngle = -90f,
@@ -145,22 +150,22 @@ fun FastingAppUI() {
                     drawArc(
                         color = Color.Blue,
                         startAngle = -90f,
-                        sweepAngle = 360*progress,
+                        sweepAngle = sweepAngle,
                         useCenter = false,
                         size = Size(size.width.toFloat(), size.height.toFloat()),
                         style = Stroke(width = 16.dp.toPx(), cap= StrokeCap.Round)
                     )
-                    val center = Offset(size.width /2f, size.height /2f)
-                    val beta = (250f * value + 145f) * (PI / 180f).toFloat()
-                    val r = size.width / 2f
-                    val s = cos(beta) * r
-                    val b = sin(beta) * r
+                    val center = Offset(size.width / 2f, size.height / 2f) // Pusat lingkaran
+                    val angleInRadians = Math.toRadians((sweepAngle - 90).toDouble()).toFloat() // Konversi derajat ke radian
+                    val radius = size.width / 2f
+                    val x = center.x + radius * cos(angleInRadians) // Posisi X titik
+                    val y = center.y + radius * sin(angleInRadians) // Posisi Y titik
 
                     drawPoints(
-                        listOf(Offset(center.x + s, center.y + b)),
+                        points = listOf(Offset(x, y)),
                         pointMode = PointMode.Points,
                         color = Color.Cyan,
-                        strokeWidth = (strokeWidth * 3f).toPx(),
+                        strokeWidth = (strokeWidth * 4f).toPx(),
                         cap = StrokeCap.Round
                     )
                 }
@@ -169,11 +174,12 @@ fun FastingAppUI() {
                     val hours = (currentTime / (60 * 60 ))
                     val minutes = ((currentTime % (60 * 60)) / (60))
                     if(isTimeRunning) {
+                        Text(text="Remaining", fontSize = 16.sp, color = Color(0xFF5624C4))
                         Text(
                             text = String.format("%02d:%02d", hours, minutes),
                             fontSize = 40.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = Color(0xFF5624C4)
                         )
                         Button(
                             onClick = {
@@ -183,11 +189,17 @@ fun FastingAppUI() {
 //                                backgroundColor = Color.Blue
 //                            )
                         ){
-                            Text(text="STOP", fontSize = 18.sp)
+                            Text(text="Stop", fontSize = 18.sp)
                         }
                     }else {
                         Button(
-                            onClick = {expanded=true},
+                            onClick = {
+                                if (isTimeRunning) {
+                                    expanded=false
+                                }else {
+                                    expanded=true
+                                }
+                                      },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Gray.copy(alpha = 0.1f), // Background color of the button
                                 contentColor = Color(0xFF5624C4) // Text/Icon color
@@ -239,10 +251,12 @@ fun FastingAppUI() {
 
 
                         LaunchedEffect(key1=currentTime,key2=isTimeRunning) {
-                            if(currentTime>0 && isTimeRunning) {
+                            if(isTimeRunning&& currentTime > 0) {
                                 delay(1000L)
-                                currentTime--
-                                value=currentTime/valueSelected.toFloat()
+                                currentTime-=1
+                                value=currentTime.toFloat()/(valueSelected*60*60)
+                            }else if (currentTime <= 0) {
+                                isTimeRunning = false // Hentikan countdown jika waktu habis
                             }
                         }
 
@@ -250,6 +264,7 @@ fun FastingAppUI() {
                         // Start button
                         Button(onClick = {
                             isTimeRunning = true
+                            currentTime = valueSelected*60*60
                             pickedTime = LocalTime.now()
                         }) {
                             Text(text = "Start", fontSize = 18.sp)
@@ -263,7 +278,7 @@ fun FastingAppUI() {
         }
 
 
-        Spacer(modifier = Modifier.height(24.dp))
+//        Spacer(modifier = Modifier.height(24.dp))
 
 
 
@@ -279,7 +294,13 @@ fun FastingAppUI() {
             Row() {
 
                 TimeOption(label = "Begin", time = formattedTime)
-                IconButton(onClick = {timeDialogState.show()}) {
+                IconButton(onClick = {
+                    if(isTimeRunning) {
+                        timeDialogState.hide()
+                    }else {
+                        timeDialogState.show()
+                    }
+                }) {
                     Icon(imageVector = Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(25.dp))
                 }
             }
@@ -310,11 +331,12 @@ fun FastingAppUI() {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+
 
         ReminderBox()
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
 
         // Water and Calorie intake
         Row(
@@ -325,12 +347,16 @@ fun FastingAppUI() {
             IntakeBox(
                 label = "Water Intake",
                 value = "500/2000 ml",
-                color = Color(0xFF98E9FF)
+                color = Color(0xFF98E9FF),
+                navController = navController,
+                target = "waterIntake"
             )
             IntakeBox(
                 label = "Calorie Intake",
                 value = "2550/2500 cal",
-                color = Color(0XFFFFD0D0)
+                color = Color(0XFFFFD0D0),
+                navController = navController,
+                target = "calorieIntake"
             )
 
         }
@@ -374,7 +400,7 @@ fun ReminderBox() {
 }
 
 @Composable
-fun IntakeBox(label: String, value: String, color: Color) {
+fun IntakeBox(label: String, value: String, color: Color, navController: NavController, target:String) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -383,6 +409,7 @@ fun IntakeBox(label: String, value: String, color: Color) {
             .clip(RoundedCornerShape(30.dp, 30.dp, 30.dp, 30.dp))
             .background(color)
             .padding(16.dp)
+            .clickable { navController.navigate(target) }
 
     ) {
         Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.Medium)
