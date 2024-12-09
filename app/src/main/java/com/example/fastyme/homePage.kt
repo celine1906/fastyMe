@@ -99,7 +99,7 @@ fun FastingAppUI(modifier: Modifier,navController: NavController,authViewModel: 
         }
 
 
-        Spacer(modifier = Modifier.height(24.dp))
+//        Spacer(modifier = Modifier.height(24.dp))
 
         // Time settings (Begin & Stop)
         Row(
@@ -113,11 +113,12 @@ fun FastingAppUI(modifier: Modifier,navController: NavController,authViewModel: 
             TimeOption(label = "Stop", time = "08:00 AM")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+
 
         ReminderBox()
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
 
         // Water and Calorie intake
         Row(
@@ -128,12 +129,16 @@ fun FastingAppUI(modifier: Modifier,navController: NavController,authViewModel: 
             IntakeBox(
                 label = "Water Intake",
                 value = "500/2000 ml",
-                color = Color(0xFF98E9FF)
+                color = Color(0xFF98E9FF),
+                navController = navController,
+                target = "waterIntake"
             )
             IntakeBox(
                 label = "Calorie Intake",
                 value = "2550/2500 cal",
-                color = Color(0XFFFFD0D0)
+                color = Color(0XFFFFD0D0),
+                navController = navController,
+                target = "calorieIntake"
             )
 
         }
@@ -178,7 +183,7 @@ fun ReminderBox() {
 }
 
 @Composable
-fun IntakeBox(label: String, value: String, color: Color) {
+fun IntakeBox(label: String, value: String, color: Color, navController: NavController, target:String) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -187,6 +192,7 @@ fun IntakeBox(label: String, value: String, color: Color) {
             .clip(RoundedCornerShape(30.dp, 30.dp, 30.dp, 30.dp))
             .background(color)
             .padding(16.dp)
+            .clickable { navController.navigate(target) }
 
     ) {
         Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.Medium)
