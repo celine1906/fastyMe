@@ -32,8 +32,8 @@ fun MyAppNavigation(modifier: Modifier = Modifier,authViewModel: AuthViewModel) 
         composable("registerPage") {
             RegisterPage(modifier, navController,authViewModel)
         }
-//        composable("homePage") {
-//            bottomNavBar(navController)
-//        }
+        composable("homePage") {
+            FastingAppUI(modifier, navController,authViewModel)
+        }
     })
 }

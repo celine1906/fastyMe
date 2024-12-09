@@ -139,12 +139,12 @@ fun bottomNavBar(navHostController: NavHostController) {
             innerPadding ->
         NavHost(
             navController = navHostController,
-            startDestination = Dashboard,
+            startDestination = "registerPage",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable<Dashboard> {
-                FastingAppUI()
-            }
+//            composable<Dashboard> {
+//                FastingAppUI(navHostController)
+//            }
             composable<Fasting> {
                 FastingPage()
             }
@@ -157,6 +157,13 @@ fun bottomNavBar(navHostController: NavHostController) {
             composable<Profile> {
                 ProfilePage()
             }
+//            composable("registerPage") {
+//                RegisterPage(modifier, navController, authViewModel)
+//            }
+//            composable("loginPage") {
+//                LoginPage(modifier, navController)
+//            }
+
         }
     }
 }
@@ -167,15 +174,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         val authViewModel : AuthViewModel by viewModels()
-
         setContent {
-//            FastyMeTheme {
-            val navController = rememberNavController()
-            bottomNavBar(navController)
-//                Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding->
-//                    MyAppNavigation(modifier = Modifier.padding(), authViewModel = authViewModel)
-//                }
-//            }
+            FastyMeTheme {
+                Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding->
+                    MyAppNavigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel)
+                }
+            }
         }
     }
 }
