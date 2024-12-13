@@ -7,12 +7,13 @@ plugins {
 
 android {
     namespace = "com.example.fastyme"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
+        namespace = "com.example.fastyme"
         applicationId = "com.example.fastyme"
-        minSdk = 34
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 
@@ -49,6 +50,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildToolsVersion = "35.0.0"
 }
 
 dependencies {
@@ -58,6 +60,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.runtime.livedata)
     val nav_version = "2.8.2"
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
