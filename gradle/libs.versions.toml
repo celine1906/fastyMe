@@ -15,7 +15,8 @@ uiTestAndroid = "1.7.2"
 firebaseAuth = "22.1.0" # Update to the latest Firebase Authentication version
 splashScreen = "1.0.1" # Update to the latest version of SplashScreen API
 lifecycleRuntime = "2.6.1"
-runtimeLivedata = "1.7.6" # Lifecycle runtime version (LiveData)
+runtimeLivedata = "1.7.6"
+googleServices = "4.4.2" # Lifecycle runtime version (LiveData)
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 androidx-runtime-livedata = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntime" }
 runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
+google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

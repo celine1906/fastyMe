@@ -93,7 +93,7 @@ fun bottomNavBar(navHostController: NavHostController) {
                         unselectedTextColor = Color.Gray // Text color when unselected
                     ),
                     onClick = {
-                        navHostController.navigate(Recipe)
+                        navHostController.navigate("recipe_page")
                     }
                 )
                 NavigationBarItem(
@@ -120,7 +120,7 @@ fun bottomNavBar(navHostController: NavHostController) {
                         contentDescription="",
                         modifier = Modifier
                             .size(35.dp)
-                        ) },
+                    ) },
                     label = { Text("Profile") }, // Text under the icon
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color.White, // Icon color when selected
@@ -149,7 +149,7 @@ fun bottomNavBar(navHostController: NavHostController) {
                 FastingPage()
             }
             composable<Recipe> {
-                RecipePage()
+                RecipeApp()
             }
             composable<Calendar> {
                 CalendarPage()
