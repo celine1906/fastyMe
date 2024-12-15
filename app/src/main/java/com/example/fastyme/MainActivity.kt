@@ -139,8 +139,7 @@ fun BottomNavBar(navController: NavHostController) {
                 // Panggil UI Home di sini
                 FastingAppUI(
                     modifier = Modifier,
-                    navController = navController,
-                    authViewModel = AuthViewModel() // Sesuaikan dengan implementasi ViewModel Anda
+                    navController = navController
                 )
             }
             composable(FASTING_ROUTE) { FastingPage() }

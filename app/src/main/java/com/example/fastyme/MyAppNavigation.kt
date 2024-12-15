@@ -33,7 +33,7 @@ fun MyAppNavigation(modifier: Modifier = Modifier,authViewModel: AuthViewModel) 
             RegisterPage(modifier, navController,authViewModel)
         }
         composable("homePage") {
-            FastingAppUI(modifier, navController,authViewModel)
+            FastingAppUI(modifier, navController)
         }
     })
 }
