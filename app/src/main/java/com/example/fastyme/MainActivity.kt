@@ -3,7 +3,6 @@ package com.example.fastyme
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -11,12 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,161 +18,150 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.fastyme.ui.theme.FastyMeTheme
 
+// Define route constants
+const val HOME_ROUTE = "home"
+const val FASTING_ROUTE = "fasting"
+const val RECIPE_ROUTE = "recipe"
+const val CALENDAR_ROUTE = "calendar"
+const val PROFILE_ROUTE = "profile"
 
+// Main UI
 @Composable
-fun bottomNavBar(navHostController: NavHostController) {
-    Scaffold (
+fun BottomNavBar(navController: NavHostController) {
+    Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFF5624C4)
-            ) {
-                NavigationBarItem (
+            NavigationBar(containerColor = Color(0xFF5624C4)) {
+                NavigationBarItem(
                     selected = false,
-                    icon = { Icon(
-                        imageVector = Icons.Outlined.Home,
-                        contentDescription="",
-                        modifier = Modifier
-                            .size(35.dp)
-                    ) },
-                    label = { Text("Home") }, // Text under the icon
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Home,
+                            contentDescription = null,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    },
+                    label = { Text("Home") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, // Icon color when selected
-                        selectedTextColor = Color.White, // Text color when selected
-                        unselectedIconColor = Color.Gray, // Icon color when unselected
-                        unselectedTextColor = Color.Gray // Text color when unselected
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
                     ),
-                    onClick = {
-                        navHostController.navigate(Dashboard)
-                    }
+                    onClick = { navController.navigate(HOME_ROUTE) }
                 )
                 NavigationBarItem(
                     selected = false,
-                    icon = { Icon(
-                        bitmap = ImageBitmap.imageResource(R.drawable.fasting),
-                        contentDescription="",
-                        modifier = Modifier
-                            .size(35.dp)
-                    ) },
-                    label = { Text("Fasting") }, // Text under the icon
+                    icon = {
+                        Icon(
+                            bitmap = ImageBitmap.imageResource(R.drawable.fasting),
+                            contentDescription = null,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    },
+                    label = { Text("Fasting") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, // Icon color when selected
-                        selectedTextColor = Color.White, // Text color when selected
-                        unselectedIconColor = Color.Gray, // Icon color when unselected
-                        unselectedTextColor = Color.Gray // Text color when unselected
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
                     ),
-                    onClick = {
-                        navHostController.navigate(Fasting)
-                    }
+                    onClick = { navController.navigate(FASTING_ROUTE) }
                 )
                 NavigationBarItem(
                     selected = false,
-                    icon = { Icon(
-                        bitmap = ImageBitmap.imageResource(R.drawable.recipe),
-                        contentDescription="",
-                        modifier = Modifier
-                            .size(35.dp)
-                    ) },
-                    label = { Text("Recipe") }, // Text under the icon
+                    icon = {
+                        Icon(
+                            bitmap = ImageBitmap.imageResource(R.drawable.recipe),
+                            contentDescription = null,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    },
+                    label = { Text("Recipe") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, // Icon color when selected
-                        selectedTextColor = Color.White, // Text color when selected
-                        unselectedIconColor = Color.Gray, // Icon color when unselected
-                        unselectedTextColor = Color.Gray // Text color when unselected
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
                     ),
-                    onClick = {
-                        navHostController.navigate("recipe_page")
-                    }
+                    onClick = { navController.navigate(RECIPE_ROUTE) }
                 )
                 NavigationBarItem(
                     selected = false,
-                    icon = { Icon(imageVector = Icons.Outlined.DateRange,
-                        contentDescription="",
-                        modifier = Modifier
-                            .size(32.dp)
-                    ) },
-                    label = { Text("Calendar") }, // Text under the icon
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    },
+                    label = { Text("Calendar") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, // Icon color when selected
-                        selectedTextColor = Color.White, // Text color when selected
-                        unselectedIconColor = Color.Gray, // Icon color when unselected
-                        unselectedTextColor = Color.Gray // Text color when unselected
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
                     ),
-                    onClick = {
-                        navHostController.navigate(Calendar)
-                    }
+                    onClick = { navController.navigate(CALENDAR_ROUTE) }
                 )
                 NavigationBarItem(
                     selected = false,
-                    icon = { Icon(imageVector = Icons.Outlined.Person,
-                        contentDescription="",
-                        modifier = Modifier
-                            .size(35.dp)
-                    ) },
-                    label = { Text("Profile") }, // Text under the icon
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    },
+                    label = { Text("Profile") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, // Icon color when selected
-                        selectedTextColor = Color.White, // Text color when selected
-                        unselectedIconColor = Color.Gray, // Icon color when unselected
-                        unselectedTextColor = Color.Gray // Text color when unselected
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
                     ),
-                    onClick = {
-                        navHostController.navigate(Profile)
-                    }
+                    onClick = { navController.navigate(PROFILE_ROUTE) }
                 )
             }
         }
-
-    ) {
-            innerPadding ->
+    ) { innerPadding ->
         NavHost(
-            navController = navHostController,
-            startDestination = "registerPage",
+            navController = navController,
+            startDestination = HOME_ROUTE,
             modifier = Modifier.padding(innerPadding)
         ) {
-//            composable<Dashboard> {
-//                FastingAppUI(navHostController)
-//            }
-            composable<Fasting> {
-                FastingPage()
+            composable(HOME_ROUTE) {
+                // Panggil UI Home di sini
+                FastingAppUI(
+                    modifier = Modifier,
+                    navController = navController,
+                    authViewModel = AuthViewModel() // Sesuaikan dengan implementasi ViewModel Anda
+                )
             }
-            composable<Recipe> {
-                RecipeApp()
-            }
-            composable<Calendar> {
-                CalendarPage()
-            }
-            composable<Profile> {
-                ProfilePage()
-            }
-//            composable("registerPage") {
-//                RegisterPage(modifier, navController, authViewModel)
-//            }
-//            composable("loginPage") {
-//                LoginPage(modifier, navController)
-//            }
-
+            composable(FASTING_ROUTE) { FastingPage() }
+            composable(RECIPE_ROUTE) { RecipeApp() }
+            composable(CALENDAR_ROUTE) { CalendarPage() }
+            composable(PROFILE_ROUTE) { ProfilePage() }
         }
+
     }
 }
 
-// Call the UI function in your Activity
+
+// Main Activity
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
-        val authViewModel : AuthViewModel by viewModels()
         setContent {
             FastyMeTheme {
-                Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding->
-                    MyAppNavigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel)
-                }
+                val navController = rememberNavController()
+                BottomNavBar(navController)
             }
         }
     }
