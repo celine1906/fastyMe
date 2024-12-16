@@ -1,6 +1,9 @@
 package com.example.fastyme
 
+import CalorieIntake
+import DetailCalorieScreen
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.fastyme.ui.theme.FastyMeTheme
+import com.google.firebase.auth.FirebaseAuth
 
 // Define route constants
 const val HOME_ROUTE = "home"
@@ -30,10 +34,14 @@ const val FASTING_ROUTE = "fasting"
 const val RECIPE_ROUTE = "recipe"
 const val CALENDAR_ROUTE = "calendar"
 const val PROFILE_ROUTE = "profile"
+//const val CALORIE_ROUTE = "calorie"
+val user = FirebaseAuth.getInstance().currentUser
+val userId = user?.uid ?: "guest"
 
 // Main UI
 @Composable
 fun BottomNavBar(navController: NavHostController) {
+
     Scaffold(
         bottomBar = {
             NavigationBar(containerColor = Color(0xFF5624C4)) {
@@ -138,17 +146,39 @@ fun BottomNavBar(navController: NavHostController) {
             composable(HOME_ROUTE) {
                 // Panggil UI Home di sini
                 FastingAppUI(
-                    modifier = Modifier,
-                    navController = navController
+                    navController = navController,
                 )
             }
             composable(FASTING_ROUTE) { FastingPage() }
             composable(RECIPE_ROUTE) { RecipeApp() }
             composable(CALENDAR_ROUTE) { CalendarPage() }
             composable(PROFILE_ROUTE) { ProfilePage() }
+            composable("waterIntake") { WaterIntake(userId, navController) }
+            composable("calorie") { CalorieIntake(userId, navController) }
+            composable("detailCalorie/{mealType}") { backStackEntry ->
+                val mealType = backStackEntry.arguments?.getString("mealType") ?: ""
+                DetailCalorieScreen(name = mealType)
+            }
         }
 
     }
+}
+
+fun fetchData() {
+    db.collection("Water Intake")
+        .document("${userId}_$todayString")
+        .get()
+        .addOnSuccessListener { document ->
+            if (document != null && document.exists()) {
+                totalIntake = document.getLong("totalWaterIntake")?.toInt() ?: 0
+                fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
+            } else {
+                totalIntake = 0 // Reset if no data for today
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.d("Firebase", "Error fetching data: ${exception.message}")
+        }
 }
 
 
@@ -159,6 +189,8 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         setContent {
             FastyMeTheme {
+                // Fetch initial data on load
+                fetchData()
                 val navController = rememberNavController()
                 BottomNavBar(navController)
             }
