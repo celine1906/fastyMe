@@ -3,12 +3,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,12 +35,144 @@ import com.example.fastyme.R
 import com.example.fastyme.RecipeCategoryScreen
 import com.example.fastyme.RecipePage
 import com.example.fastyme.db
+import com.example.fastyme.todayString
+import com.example.fastyme.userId
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import kotlinx.coroutines.*
+import com.google.gson.JsonSyntaxException
+
+fun extractJson(response: String): JsonObject? {
+    return try {
+        // Ekstrak JSON dengan regex
+        val jsonRegex = "\\{.*?\\}".toRegex()
+        val jsonString = jsonRegex.find(response)?.value
+
+        if (jsonString != null) {
+            // Parse JSON menggunakan Gson
+            Gson().fromJson(jsonString, JsonObject::class.java)
+        } else {
+            null // Jika JSON tidak ditemukan
+        }
+    } catch (e: JsonSyntaxException) {
+        Log.e("JSONParsing", "Error parsing JSON: ${e.message}")
+        null
+    }
+}
+
+//suspend fun parseGeminiResponse(response: String): Map<String, Float?> {
+//    return try {
+//        // Parse JSON response to JsonObject
+//        val jsonObject = Gson().fromJson(response, JsonObject::class.java)
+//
+//        // Extract the "Calorie" object
+//        val calorieObject = jsonObject.getAsJsonObject("Calorie")
+//
+//        // Parse individual fields and convert to Float
+//        mapOf(
+//            "fat" to calorieObject.get("fat")?.asString?.toFloatOrNull(),
+//            "protein" to calorieObject.get("protein")?.asString?.toFloatOrNull(),
+//            "carbs" to calorieObject.get("carbs")?.asString?.toFloatOrNull(),
+//            "fiber" to calorieObject.get("fiber")?.asString?.toFloatOrNull(),
+//            "totalCalories" to calorieObject.get("totalCalorie")?.asString?.toFloatOrNull()
+//        )
+//    } catch (e: JsonSyntaxException) {
+//        // Log the error for debugging
+//        Log.e("JSONParsing", "Error parsing JSON: ${e.message}")
+//        emptyMap() // Return empty map if parsing fails
+//    } catch (e: Exception) {
+//        Log.e("JSONParsing", "Unexpected error: ${e.message}")
+//        emptyMap() // Return empty map for other errors
+//    }
+//}
+
+fun parseToFloat(input: String?): Float? {
+    if (input == null) return null
+    // Regex untuk menangkap angka, termasuk angka desimal
+    val regex = Regex("[-+]?[0-9]*\\.?[0-9]+")
+    val matchResult = regex.find(input)
+    return matchResult?.value?.toFloatOrNull() // Mengonversi hasil regex ke Float
+}
+
+fun updateDatabaseCalorie(jsonObject: JsonObject, type:String) {
+    try {
+        // Debug respons
+        Log.d("Calorie Response", "Data received: $jsonObject")
+
+        // Parsing respons
+//        val calorieData = if (data.startsWith("{")) {
+//            // Jika formatnya JSON
+//            Gson().fromJson(data, Map::class.java)
+//        } else {
+//            // Jika formatnya string biasa
+//            parseGeminiResponse(data)
+//        }
+
+        val fat = parseToFloat(jsonObject.get("fat")?.asString)
+        val protein = parseToFloat(jsonObject.get("protein")?.asString)
+        val carbs = parseToFloat(jsonObject.get("carbs")?.asString)
+        val fiber = parseToFloat(jsonObject.get("fiber")?.asString)
+        val totalCalories = parseToFloat(jsonObject.get("totalCalories")?.asString)
+
+        if (jsonObject!=null) {
+            val firebaseData = hashMapOf(
+                "fat" to fat,
+                "protein" to protein,
+                "carbs" to carbs,
+                "fiber" to fiber,
+                "totalCalories" to totalCalories,
+                "date" to todayString
+            )
+
+            db.collection("Calorie Intake")
+                .document("${userId}_$todayString")
+                .collection("${type}")
+                .add(firebaseData)
+                .addOnSuccessListener {
+                    Log.d("Firebase", "New entry added successfully to sub-collection")
+                }
+                .addOnFailureListener { exception ->
+                    Log.d("Firebase", "Error adding entry: ${exception.message}")
+                }
+        } else {
+            Log.e("JSONValidation", "Invalid data format: $jsonObject")
+        }
+    } catch (e: JsonSyntaxException) {
+        Log.e("JSONValidation", "Error parsing JSON: ${e.message}")
+    } catch (e: Exception) {
+        Log.e("DatabaseUpdate", "Unexpected error: ${e.message}")
+    }
+}
+
+
+data class calorie (
+    val prompt:String,
+    val date:String
+)
+
+fun retrieveDataCalorie(listData: SnapshotStateList<calorie>) {
+    db.collection("Calorie Intake")
+        .get()
+        .addOnSuccessListener { data ->
+            listData.clear() // Bersihkan list sebelumnya
+            for (d in data) {
+                listData.add(
+                    calorie(
+                        d.data["prompt"].toString(),
+                        d.data["date"].toString()
+                    )
+                )
+            }
+        }
+        .addOnFailureListener { e -> Log.d("fail", "${e}") }
+}
 
 
 
@@ -73,26 +207,26 @@ fun CalorieIntake(userId: String, navController: NavController) {
 //            }
 //    }
 
-    fun updateDatabase(lists:String) {
-        val data = hashMapOf(
-            "prompt" to lists,
-//            "fat",
-//            "protein",
-//            "carbs",
-//            "fiber",
-//            "totalCalorieIntake" to total,
-            "date" to todayString
-        )
-        db.collection("Calorie Intake")
-            .document("${userId}_$todayString")
-            .set(data)
-            .addOnSuccessListener {
-                Log.d("Firebase", "Data updated successfully")
-            }
-            .addOnFailureListener { exception ->
-                Log.d("Firebase", "Error updating data: ${exception.message}")
-            }
-    }
+//    fun updateDatabase(lists:String) {
+//        val data = hashMapOf(
+//            "prompt" to lists,
+////            "fat",
+////            "protein",
+////            "carbs",
+////            "fiber",
+////            "totalCalorieIntake" to total,
+//            "date" to todayString
+//        )
+//        db.collection("Calorie Intake")
+//            .document("${userId}_$todayString")
+//            .set(data)
+//            .addOnSuccessListener {
+//                Log.d("Firebase", "Data updated successfully")
+//            }
+//            .addOnFailureListener { exception ->
+//                Log.d("Firebase", "Error updating data: ${exception.message}")
+//            }
+//    }
 
     // Fetch initial data on load
 //    fetchData()
@@ -158,41 +292,30 @@ fun CalorieIntake(userId: String, navController: NavController) {
         }
 
 //        API Gemini
-        suspend fun modelCall(prompt:String): String {
-            val generativeModel = GenerativeModel(
-                modelName = "gemini-1.5-flash",
-                apiKey = "AIzaSyBqK46pVY1OzQkdbKiW39kBVKYfuTc1yiU"
-            )
-            val generatePrompt = "Hitung kalori dari bahan-bahan makanan berikut ${prompt} dengan detail, berikan output berupa list jumlah lemak, protein, karbohidrat, serat, serta total kalori atau jumlah dari lemak, protein, karbohidrat, dan serat. contoh output = 200, 300, 500, 50, 1050"
-            return try {
-                val response = generativeModel.generateContent(generatePrompt)
-                val text = response.text ?: ""
-                Log.d("GeminiAPI", "Response: $text")
-                text
-            } catch (e: Exception) {
-                Log.e("GeminiAPI", "Error: ${e.message}")
-                "Error: ${e.message}"
-            }
-        }
+suspend fun modelCall(prompt: String): String {
+    return try {
+        val generativeModel = GenerativeModel(
+            modelName = "gemini-1.5-flash",
+            apiKey = "AIzaSyBqK46pVY1OzQkdbKiW39kBVKYfuTc1yiU",
+            generationConfig { mapOf("response_mime_type" to "application/json") }
+        )
+        val generatePrompt = """
+            Hitung kalori dari bahan-bahan makanan berikut ${prompt} dengan detail.
+            Berikan output berupa list jumlah lemak, protein, karbohidrat, serat, serta total kalori.
+            Gunakan format JSON sebagai berikut: {"fat":str, "protein":str, "carbs":str, "fiber":str, "totalCalories":str}
+        """.trimIndent()
+
+        val response = generativeModel.generateContent(generatePrompt)
+        response.text ?: "{}" // Default ke JSON kosong jika respons null
+    } catch (e: Exception) {
+        Log.e("GeminiAPI", "Error: ${e.message}")
+        "{}" // Kembalikan JSON kosong saat terjadi error
+    }
+}
 
 
 
-//        class CalorieIntakeViewModel : ViewModel() {
-//            private val _isLoading = MutableLiveData(false)
-//            val isLoading: LiveData<Boolean> = _isLoading
-//
-//            fun submitCalorie(inputCalorie: String) {
-//                _isLoading.value = true
-//                viewModelScope.launch {
-//                    val list = modelCall(inputCalorie)
-//                    updateDatabase(list)
-//                    // Update UI or navigate to the next screen
-//                    _isLoading.value = false
-//                }
-//            }
-//        }
-//
-//        val viewModel = viewModel<CalorieIntakeViewModel>()
+
 
         // Modal Dialog for Input
         if (showDialog) {
@@ -216,16 +339,25 @@ fun CalorieIntake(userId: String, navController: NavController) {
                         Spacer(modifier = Modifier.height(8.dp))
 //                        val coroutineScope = rememberCoroutineScope()
                         Button(onClick = {
-                           MainScope().launch {
-                               val list = modelCall(inputCalorie) // Menunggu hasil dari Gemini API
-                               updateDatabase(list) // Menyimpan data ke Firebase
-                               navController.navigate("detailCalorie/$typeofMeal")
-                               showDialog = false
-                           }
-                        })
-                        {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    val list = modelCall(inputCalorie) // Menunggu hasil dari Gemini API
+                                    withContext(Dispatchers.Main) {
+                                        val response = extractJson(list)
+                                        if (response != null) {
+                                            updateDatabaseCalorie(response, typeofMeal)
+                                        } // Menyimpan data ke Firebase di MainThread
+                                        navController.navigate("detailCalorie/$typeofMeal")
+                                        showDialog = false
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("GeminiAPI", "Error: ${e.message}")
+                                }
+                            }
+                        }) {
                             Text("Submit")
                         }
+
 //                        if (viewModel.isLoading.value == true) {
 //                            CircularProgressIndicator()
 //                        }
@@ -290,6 +422,8 @@ fun MealTrackerItem(name: String, calorie: Int, onPlusClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailCalorieScreen(name: String) {
+    val listData = remember { mutableStateListOf<calorie>() }
+    retrieveDataCalorie(listData)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -298,35 +432,55 @@ fun DetailCalorieScreen(name: String) {
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                "Your breakfast calories are excessive, please reduce your intake at lunch",
-                fontWeight = FontWeight.Bold
-            )
-
-            // Example Meal Entries
-            listOf("08.00 a.m" to "200 kcal", "10.00 a.m" to "200 kcal").forEachIndexed { index, meal ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFF3E5F5), RoundedCornerShape(8.dp))
-                        .padding(16.dp)
+            items(listData) {
+                    d -> Column(
+                modifier = Modifier.fillMaxWidth()
+            ){
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Column {
-//                        Text("${index + 1}. ${meal.first}", fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("2 siung bawang putih, 1 sendok makan minyak, 1 butir telur diorak-arik, 100 gram nasi putih")
-                        Spacer(modifier = Modifier.height(8.dp))
-//                        Text("Total: ${meal.second}", fontWeight = FontWeight.Bold)
-                    }
+                    Text("Prompt : ${d.prompt.toString()}")
+                    Text("Date : ${d.date.toString()}")
                 }
+
+
+
+                Divider(
+                    color = Color.Gray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
+            }
+//            Text(
+//                "Your breakfast calories are excessive, please reduce your intake at lunch",
+//                fontWeight = FontWeight.Bold
+//            )
+//
+//            // Example Meal Entries
+//            listOf("08.00 a.m" to "200 kcal", "10.00 a.m" to "200 kcal").forEachIndexed { index, meal ->
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .background(Color(0xFFF3E5F5), RoundedCornerShape(8.dp))
+//                        .padding(16.dp)
+//                ) {
+//                    Column {
+////                        Text("${index + 1}. ${meal.first}", fontWeight = FontWeight.Bold)
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        Text("2 siung bawang putih, 1 sendok makan minyak, 1 butir telur diorak-arik, 100 gram nasi putih")
+//                        Spacer(modifier = Modifier.height(8.dp))
+////                        Text("Total: ${meal.second}", fontWeight = FontWeight.Bold)
+//                    }
+//                }
+//            }
         }
     }
 }

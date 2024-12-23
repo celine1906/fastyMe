@@ -407,7 +407,7 @@ fun FastingAppUI(navController: NavController) {
 //                target = "calorie"
 //            )
 
-        }
+            }
         }
     }
 }

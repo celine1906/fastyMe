@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -164,21 +165,24 @@ fun BottomNavBar(navController: NavHostController) {
     }
 }
 
+@Composable
 fun fetchData() {
-    db.collection("Water Intake")
-        .document("${userId}_$todayString")
-        .get()
-        .addOnSuccessListener { document ->
-            if (document != null && document.exists()) {
-                totalIntake = document.getLong("totalWaterIntake")?.toInt() ?: 0
-                fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
-            } else {
-                totalIntake = 0 // Reset if no data for today
+    LaunchedEffect(Unit) {
+        db.collection("Water Intake")
+            .document("${userId}_$todayString")
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    totalIntake = document.getLong("totalWaterIntake")?.toInt() ?: 0
+                    fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
+                } else {
+                    totalIntake = 0 // Reset if no data for today
+                }
             }
-        }
-        .addOnFailureListener { exception ->
-            Log.d("Firebase", "Error fetching data: ${exception.message}")
-        }
+            .addOnFailureListener { exception ->
+                Log.d("Firebase", "Error fetching data: ${exception.message}")
+            }
+    }
 }
 
 
