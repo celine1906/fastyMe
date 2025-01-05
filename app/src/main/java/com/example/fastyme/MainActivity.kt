@@ -2,10 +2,12 @@ package com.example.fastyme
 
 import CalorieIntake
 import DetailCalorieScreen
+import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -158,32 +160,13 @@ fun BottomNavBar(navController: NavHostController) {
             composable("calorie") { CalorieIntake(userId, navController) }
             composable("detailCalorie/{mealType}") { backStackEntry ->
                 val mealType = backStackEntry.arguments?.getString("mealType") ?: ""
-                DetailCalorieScreen(name = mealType)
+                DetailCalorieScreen(name = mealType, navController)
             }
         }
 
     }
 }
 
-@Composable
-fun fetchData() {
-    LaunchedEffect(Unit) {
-        db.collection("Water Intake")
-            .document("${userId}_$todayString")
-            .get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    totalIntake = document.getLong("totalWaterIntake")?.toInt() ?: 0
-                    fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
-                } else {
-                    totalIntake = 0 // Reset if no data for today
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.d("Firebase", "Error fetching data: ${exception.message}")
-            }
-    }
-}
 
 
 // Main Activity

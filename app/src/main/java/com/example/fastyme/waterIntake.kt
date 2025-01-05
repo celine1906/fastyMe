@@ -1,5 +1,6 @@
 package com.example.fastyme
 
+import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -43,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -65,6 +67,30 @@ var totalIntake =0
 val targetIntake = 2100
 val today = LocalDate.now()
 val todayString = today.format(DateTimeFormatter.ISO_DATE)
+
+
+@Composable
+fun fetchData() {
+    LaunchedEffect(Unit) {
+        db.collection("Water Intake")
+            .document("${userId}_$todayString")
+            .addSnapshotListener {
+                    snapshot, e ->
+                if (e != null) {
+                    Log.w(TAG, "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    Log.d(TAG, "Current data: ${snapshot.data}")
+                    totalIntake = snapshot.getLong("totalWaterIntake")?.toInt() ?: 0
+                    fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
+                } else {
+                    Log.d(TAG, "Current data: null")
+                }
+            }
+    }
+}
 
 @Composable
 fun glass(sizes:Int) {

@@ -1,13 +1,18 @@
+import android.content.ContentValues.TAG
 import android.util.Log
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -15,8 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -35,10 +44,14 @@ import com.example.fastyme.R
 import com.example.fastyme.RecipeCategoryScreen
 import com.example.fastyme.RecipePage
 import com.example.fastyme.db
+import com.example.fastyme.fillPercentage
+import com.example.fastyme.targetIntake
 import com.example.fastyme.todayString
+import com.example.fastyme.totalIntake
 import com.example.fastyme.userId
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.generationConfig
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -48,6 +61,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.*
 import com.google.gson.JsonSyntaxException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 fun extractJson(response: String): JsonObject? {
     return try {
@@ -67,32 +83,6 @@ fun extractJson(response: String): JsonObject? {
     }
 }
 
-//suspend fun parseGeminiResponse(response: String): Map<String, Float?> {
-//    return try {
-//        // Parse JSON response to JsonObject
-//        val jsonObject = Gson().fromJson(response, JsonObject::class.java)
-//
-//        // Extract the "Calorie" object
-//        val calorieObject = jsonObject.getAsJsonObject("Calorie")
-//
-//        // Parse individual fields and convert to Float
-//        mapOf(
-//            "fat" to calorieObject.get("fat")?.asString?.toFloatOrNull(),
-//            "protein" to calorieObject.get("protein")?.asString?.toFloatOrNull(),
-//            "carbs" to calorieObject.get("carbs")?.asString?.toFloatOrNull(),
-//            "fiber" to calorieObject.get("fiber")?.asString?.toFloatOrNull(),
-//            "totalCalories" to calorieObject.get("totalCalorie")?.asString?.toFloatOrNull()
-//        )
-//    } catch (e: JsonSyntaxException) {
-//        // Log the error for debugging
-//        Log.e("JSONParsing", "Error parsing JSON: ${e.message}")
-//        emptyMap() // Return empty map if parsing fails
-//    } catch (e: Exception) {
-//        Log.e("JSONParsing", "Unexpected error: ${e.message}")
-//        emptyMap() // Return empty map for other errors
-//    }
-//}
-
 fun parseToFloat(input: String?): Float? {
     if (input == null) return null
     // Regex untuk menangkap angka, termasuk angka desimal
@@ -101,25 +91,24 @@ fun parseToFloat(input: String?): Float? {
     return matchResult?.value?.toFloatOrNull() // Mengonversi hasil regex ke Float
 }
 
-fun updateDatabaseCalorie(jsonObject: JsonObject, type:String) {
+fun getCurrentTimeFormatted(): String {
+    val calendar = Calendar.getInstance()
+    val dateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+    return dateFormat.format(calendar.time)
+}
+
+fun updateDatabaseCalorie(jsonObject: JsonObject, type:String, inputValue:String) {
     try {
         // Debug respons
         Log.d("Calorie Response", "Data received: $jsonObject")
-
-        // Parsing respons
-//        val calorieData = if (data.startsWith("{")) {
-//            // Jika formatnya JSON
-//            Gson().fromJson(data, Map::class.java)
-//        } else {
-//            // Jika formatnya string biasa
-//            parseGeminiResponse(data)
-//        }
 
         val fat = parseToFloat(jsonObject.get("fat")?.asString)
         val protein = parseToFloat(jsonObject.get("protein")?.asString)
         val carbs = parseToFloat(jsonObject.get("carbs")?.asString)
         val fiber = parseToFloat(jsonObject.get("fiber")?.asString)
         val totalCalories = parseToFloat(jsonObject.get("totalCalories")?.asString)
+        val currentTime = getCurrentTimeFormatted()
+
 
         if (jsonObject!=null) {
             val firebaseData = hashMapOf(
@@ -128,7 +117,8 @@ fun updateDatabaseCalorie(jsonObject: JsonObject, type:String) {
                 "carbs" to carbs,
                 "fiber" to fiber,
                 "totalCalories" to totalCalories,
-                "date" to todayString
+                "prompt" to inputValue,
+                "time" to currentTime
             )
 
             db.collection("Calorie Intake")
@@ -151,22 +141,90 @@ fun updateDatabaseCalorie(jsonObject: JsonObject, type:String) {
     }
 }
 
+fun updateDatabaseIntakeCalorie(total: Int, totalB:Int, totalL:Int, totalD:Int, totalS:Int) {
+    val data = hashMapOf(
+        "totalBreakfastIntake" to totalB,
+        "totalLunchIntake" to totalL,
+        "totalDinnerIntake" to totalD,
+        "totalSnackIntake" to totalS,
+        "totalCalorieIntake" to total,
+    )
+    db.collection("Calorie Intake")
+        .document("${userId}_$todayString")
+        .set(data, SetOptions.merge())
+        .addOnSuccessListener {
+            Log.d("Firebase", "Data updated successfully")
+        }
+        .addOnFailureListener { exception ->
+            Log.d("Firebase", "Error updating data: ${exception.message}")
+        }
+}
 
-data class calorie (
-    val prompt:String,
-    val date:String
+data class totalCalorie (
+    var totalBreakfast:Int,
+    var totalLunch:Int,
+    var totalDinner:Int,
+    var totalSnack:Int,
+    var totalCalories:Int,
 )
 
-fun retrieveDataCalorie(listData: SnapshotStateList<calorie>) {
+
+@Composable
+fun fetchDataCalorie(calorieState: MutableState<totalCalorie>) {
+//    LaunchedEffect(Unit) {
+        db.collection("Calorie Intake")
+            .document("${userId}_$todayString")
+            .addSnapshotListener {
+                    snapshot, e ->
+                if (e != null) {
+                    Log.w(TAG, "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    Log.d(TAG, "Current data: ${snapshot.data}")
+                    calorieState.value = totalCalorie(
+                        totalBreakfast = (snapshot["totalBreakfastIntake"] as? Number)?.toInt() ?: 0,
+                        totalLunch = (snapshot["totalLunchIntake"] as? Number)?.toInt() ?: 0,
+                        totalDinner = (snapshot["totalDinnerIntake"] as? Number)?.toInt() ?: 0,
+                        totalSnack = (snapshot["totalSnackIntake"] as? Number)?.toInt() ?: 0,
+                        totalCalories = (snapshot["totalCalorieIntake"] as? Number)?.toInt() ?: 0
+                    )
+                } else {
+                    Log.d(TAG, "Current data: null")
+                }
+            }
+//    }
+}
+
+
+data class calorie (
+    val fat:String,
+    val carbs:String,
+    val protein:String,
+    val fiber:String,
+    val totalCalories:String,
+    val prompt:String,
+    val time:String
+)
+
+fun retrieveDataCalorie(listData: SnapshotStateList<calorie>, type:String) {
     db.collection("Calorie Intake")
+        .document("${userId}_$todayString")
+        .collection("${type}")
         .get()
         .addOnSuccessListener { data ->
             listData.clear() // Bersihkan list sebelumnya
             for (d in data) {
                 listData.add(
                     calorie(
+                        d.data["fat"].toString(),
+                        d.data["carbs"].toString(),
+                        d.data["protein"].toString(),
+                        d.data["fiber"].toString(),
+                        d.data["totalCalories"].toString(),
                         d.data["prompt"].toString(),
-                        d.data["date"].toString()
+                        d.data["time"].toString()
                     )
                 )
             }
@@ -174,62 +232,39 @@ fun retrieveDataCalorie(listData: SnapshotStateList<calorie>) {
         .addOnFailureListener { e -> Log.d("fail", "${e}") }
 }
 
+fun normalizeNumberString(input: String): String {
+    return input.trimStart('0').ifEmpty { "0" }
+}
+
+@Composable
+fun progressCircle(size:Int, progress:Float) {
+    Box(modifier = Modifier.size(size.dp), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+            modifier = Modifier.fillMaxSize(),
+            progress = progress / 100,
+            strokeWidth = 10.dp,
+            color = Color(0xFF673AB7),
+            trackColor = Color.LightGray
+        )
+        Text("${progress.toInt()}%", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalorieIntake(userId: String, navController: NavController) {
-    var totalCalorie by remember { mutableStateOf(0) }
-    val targetCalorie = 2100
-    val progress = (totalCalorie.toFloat() / targetCalorie) * 100
+    val calorieState = remember { mutableStateOf(totalCalorie(0,0,0,0,0)) }
+    fetchDataCalorie(calorieState)
+    val targetCalorie = 2000
+    val progress = (calorieState.value.totalCalories.toFloat() / targetCalorie) * 100
     var showDialog by remember { mutableStateOf(false) }
     var inputCalorie by remember { mutableStateOf("") }
     var typeofMeal by remember { mutableStateOf("") }
-    val today = LocalDate.now()
-    val todayString = today.format(DateTimeFormatter.ISO_DATE)
-//    var list by remember { mutableStateOf("") }
 
 
-//    fun fetchData() {
-//        db.collection("Calorie Intake")
-//            .document("${userId}_$todayString")
-//            .get()
-//            .addOnSuccessListener { document ->
-//                if (document != null && document.exists()) {
-//                    totalCalorie = document.getLong("totalWaterIntake")?.toInt() ?: 0
-////                    fillPercentage = (totalIntake.toFloat() / targetIntake * 100).coerceAtMost(100f)
-//                } else {
-//                    totalCalorie = 0 // Reset if no data for today
-//                }
-//            }
-//            .addOnFailureListener { exception ->
-//                Log.d("Firebase", "Error fetching data: ${exception.message}")
-//            }
-//    }
-
-//    fun updateDatabase(lists:String) {
-//        val data = hashMapOf(
-//            "prompt" to lists,
-////            "fat",
-////            "protein",
-////            "carbs",
-////            "fiber",
-////            "totalCalorieIntake" to total,
-//            "date" to todayString
-//        )
-//        db.collection("Calorie Intake")
-//            .document("${userId}_$todayString")
-//            .set(data)
-//            .addOnSuccessListener {
-//                Log.d("Firebase", "Data updated successfully")
-//            }
-//            .addOnFailureListener { exception ->
-//                Log.d("Firebase", "Error updating data: ${exception.message}")
-//            }
-//    }
-
-    // Fetch initial data on load
-//    fetchData()
 
     Scaffold(
         topBar = {
@@ -262,31 +297,24 @@ fun CalorieIntake(userId: String, navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Progress Circle
-                Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.fillMaxSize(),
-                        progress = progress / 100,
-                        strokeWidth = 10.dp,
-                        color = Color(0xFF673AB7)
-                    )
-                    Text("${progress.toInt()}%", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                }
+                progressCircle(200, progress)
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Intake Text
                 Text("You have consumed", fontSize = 16.sp)
-                Text("$totalCalorie / $targetCalorie kcal", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                Text("${calorieState.value.totalCalories} / $targetCalorie kcal", fontSize = 30.sp, fontWeight = FontWeight.Bold)
                 Text("today", fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Meal Tracker List
-                MealTrackerItem("Breakfast", totalCalorie, onPlusClick = { showDialog = true; typeofMeal="Breakfast" })
+                MealTrackerItem("Breakfast", calorieState.value.totalBreakfast.toInt(), onPlusClick = { showDialog = true; typeofMeal="Breakfast" }, navController, R.drawable.breakfast, 500)
                 Spacer(modifier = Modifier.height(8.dp))
-                MealTrackerItem("Lunch", totalCalorie, onPlusClick = { showDialog = true; typeofMeal="Lunch" })
+                MealTrackerItem("Lunch", calorieState.value.totalLunch.toInt(), onPlusClick = { showDialog = true; typeofMeal="Lunch" }, navController, R.drawable.lunch, 700)
                 Spacer(modifier = Modifier.height(8.dp))
-                MealTrackerItem("Dinner", totalCalorie, onPlusClick = { showDialog = true; typeofMeal="Dinner" })
+                MealTrackerItem("Dinner", calorieState.value.totalDinner.toInt(), onPlusClick = { showDialog = true; typeofMeal="Dinner" }, navController, R.drawable.dinner, 600)
                 Spacer(modifier = Modifier.height(8.dp))
-                MealTrackerItem("Snack", totalCalorie, onPlusClick = { showDialog = true; typeofMeal="Snack" })
+                MealTrackerItem("Snack", calorieState.value.totalSnack.toInt(), onPlusClick = { showDialog = true; typeofMeal="Snack" }, navController, R.drawable.snack, 200)
             }
 
         }
@@ -345,7 +373,23 @@ suspend fun modelCall(prompt: String): String {
                                     withContext(Dispatchers.Main) {
                                         val response = extractJson(list)
                                         if (response != null) {
-                                            updateDatabaseCalorie(response, typeofMeal)
+                                            updateDatabaseCalorie(response, typeofMeal, inputCalorie)
+//                                            val totalCalories = parseToFloat(response.get("totalCalories")?.asString)
+                                            val totalCalories = (parseToFloat(normalizeNumberString(response.get("totalCalories")?.asString ?: "0")) ?: 0f).toInt()
+
+
+                                            calorieState.value.totalCalories += totalCalories
+                                            if(typeofMeal=="Breakfast") {
+                                                calorieState.value.totalBreakfast += totalCalories
+                                            } else if(typeofMeal=="Lunch") {
+                                                calorieState.value.totalLunch += totalCalories
+                                            } else if(typeofMeal=="Dinner") {
+                                                calorieState.value.totalDinner += totalCalories
+                                            } else if(typeofMeal=="Snack") {
+                                                calorieState.value.totalSnack += totalCalories
+                                            }
+                                            updateDatabaseIntakeCalorie(calorieState.value.totalCalories.toInt(), calorieState.value.totalBreakfast.toInt(), calorieState.value.totalLunch.toInt(), calorieState.value.totalDinner.toInt(), calorieState.value.totalSnack.toInt())
+
                                         } // Menyimpan data ke Firebase di MainThread
                                         navController.navigate("detailCalorie/$typeofMeal")
                                         showDialog = false
@@ -358,9 +402,6 @@ suspend fun modelCall(prompt: String): String {
                             Text("Submit")
                         }
 
-//                        if (viewModel.isLoading.value == true) {
-//                            CircularProgressIndicator()
-//                        }
                     }
                 }
             }
@@ -384,49 +425,129 @@ suspend fun modelCall(prompt: String): String {
 }
 
 @Composable
-fun MealTrackerItem(name: String, calorie: Int, onPlusClick: () -> Unit) {
-    Row(
+fun MealTrackerItem(name: String, calorie: Int, onPlusClick: () -> Unit, navController: NavController, imageResId:Int, amountLimit:Int) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .background(Color(0xFFEDE7F6), RoundedCornerShape(8.dp))
+            .background(Color(0xFFD9C2EC), RoundedCornerShape(20.dp))
             .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+//        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column {
-            Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("$calorie / 300 kcal", fontSize = 14.sp)
-        }
-        Button(
-            onClick = onPlusClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent, // Warna latar belakang menjadi transparan
-                contentColor = Color.Black          // Warna teks atau ikon menjadi hitam
-            ),
-            elevation = ButtonDefaults.buttonElevation(0.dp),
+        Row(
             modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Color.LightGray)
-                    .padding(16.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Show Dialog")
+                Image(
+                    painter = painterResource(id = imageResId),
+                    contentDescription = name,
+//                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                )
+                Column {
+                    Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("$calorie / $amountLimit kcal", fontSize = 14.sp)
+                }
+            }
+
+            Button(
+                onClick = onPlusClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent, // Warna latar belakang menjadi transparan
+                    contentColor = Color.White          // Warna teks atau ikon menjadi hitam
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp),
+                modifier = Modifier
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.Gray)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Show Dialog")
+                }
+            }
+        }
+        if (calorie>0) {
+            Button(onClick = {
+                navController.navigate("detailCalorie/$name")
+            },
+                modifier = Modifier
+                    .fillMaxWidth()) {
+                Text("Detail")
             }
         }
     }
+
+}
+
+// Extension function to convert pixels to dp
+@Composable
+fun Float.toDp(): Dp {
+    val density = LocalDensity.current
+    return with(density) { this@toDp.toDp() }
+}
+
+@Composable
+fun ProgressNutrition(name: String, amount:Float, amountLimit:Int, color: Color) {
+    val progress = (amount / amountLimit).coerceIn(0f, 1f)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(name)
+            Text("${amount} / ${amountLimit} g")
+        }
+        // Canvas for progress bar
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(15.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White)
+        ) {
+            // Draw the progress bar
+            val barWidth = size.width * progress
+            drawRect(
+                color = color,
+                size = androidx.compose.ui.geometry.Size(width = barWidth, height = size.height)
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(12.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailCalorieScreen(name: String) {
+fun DetailCalorieScreen(name: String, navController: NavController) {
     val listData = remember { mutableStateListOf<calorie>() }
-    retrieveDataCalorie(listData)
+    retrieveDataCalorie(listData, name)
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_arrow_back_ios_24),
+                            contentDescription = "Back",
+                            tint = Color.White // Ensure the back icon is black
+                        )
+                    }
+                },
                 title = { Text("${name} Detail", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF673AB7))
             )
@@ -439,48 +560,84 @@ fun DetailCalorieScreen(name: String) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(listData) {
-                    d -> Column(
-                modifier = Modifier.fillMaxWidth()
-            ){
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text("Prompt : ${d.prompt.toString()}")
-                    Text("Date : ${d.date.toString()}")
-                }
-
-
-
-                Divider(
-                    color = Color.Gray,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-            }
 //            Text(
 //                "Your breakfast calories are excessive, please reduce your intake at lunch",
 //                fontWeight = FontWeight.Bold
 //            )
-//
-//            // Example Meal Entries
-//            listOf("08.00 a.m" to "200 kcal", "10.00 a.m" to "200 kcal").forEachIndexed { index, meal ->
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(Color(0xFFF3E5F5), RoundedCornerShape(8.dp))
-//                        .padding(16.dp)
-//                ) {
-//                    Column {
-////                        Text("${index + 1}. ${meal.first}", fontWeight = FontWeight.Bold)
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        Text("2 siung bawang putih, 1 sendok makan minyak, 1 butir telur diorak-arik, 100 gram nasi putih")
-//                        Spacer(modifier = Modifier.height(8.dp))
-////                        Text("Total: ${meal.second}", fontWeight = FontWeight.Bold)
-//                    }
-//                }
-//            }
+            itemsIndexed(listData) {
+                    index, d -> Column(
+                modifier = Modifier
+                        .fillMaxWidth()
+                    .padding(8.dp)
+                    .background(Color(0xFFD9C2EC), RoundedCornerShape(20.dp))
+                    .padding(12.dp),
+            ){
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row {
+                        Box() {
+                            Text("${index+1}.")
+                        }
+                        Text("${d.time}")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("${d.prompt}")
+                        IconButton(onClick = {
+
+                        }) {
+                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(25.dp))
+                        }
+                    }
+                    var fatLimit by remember { mutableStateOf(0) }
+                    var proteinLimit by remember { mutableStateOf(0) }
+                    var carbsLimit by remember { mutableStateOf(0) }
+                    var fiberLimit by remember { mutableStateOf(0) }
+                    if(name=="Breakfast") {
+                        fatLimit=15
+                        proteinLimit=19
+                        carbsLimit=75
+                        fiberLimit=7
+                    } else if(name=="Lunch") {
+                        fatLimit=21
+                        proteinLimit=26
+                        carbsLimit=105
+                        fiberLimit=10
+                    }
+                    else if(name=="Dinner") {
+                        fatLimit=18
+                        proteinLimit=23
+                        carbsLimit=90
+                        fiberLimit=8
+                    } else if(name=="Snack") {
+                        fatLimit=6
+                        proteinLimit=7
+                        carbsLimit=30
+                        fiberLimit=3
+                    }
+                    ProgressNutrition("Fat", d.fat.toFloat(), fatLimit, Color(0xFFF5B03E))
+                    ProgressNutrition("Protein", d.protein.toFloat(), proteinLimit, Color(0xFFCB1C35))
+                    ProgressNutrition("Carbs", d.carbs.toFloat(), carbsLimit, Color(0xFF5624C4))
+                    ProgressNutrition("Fiber", d.fiber.toFloat(), fiberLimit, Color(0xFF307D31))
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Total calories : ${d.totalCalories} kcal")
+                        Button(onClick = {}) {
+                            Text("Delete")
+                        }
+                    }
+
+                }
+            }
+            }
+
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.example.fastyme
 
-import android.R.attr.radius
+import android.content.ContentValues.TAG
+import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,14 +39,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -55,18 +53,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.MutableState
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.firestore.SetOptions
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import fetchDataCalorie
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
+import progressCircle
+import totalCalorie
+import java.net.URLEncoder
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import kotlin.math.PI
+import java.time.format.DateTimeParseException
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -76,14 +80,17 @@ object Dashboard
 
 @Composable
 fun FastingAppUI(navController: NavController) {
+    val fastingState = remember { mutableStateOf(fastingData("",0,"",false, false,0,"","","")) }
+    fetchDataFasting(fastingState, fastingState.value.startTime)
+
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("12:12") }
     var valueSelected by remember { mutableStateOf(12) }
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableStateOf(1f) }
     var currentTime by remember { mutableStateOf(valueSelected*60*60) }
     var isTimeRunning by remember { mutableStateOf(false) }
     var pickedTime by remember { mutableStateOf(LocalTime.now()) }
+    var endTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val formattedTime by remember {
         derivedStateOf {
             DateTimeFormatter.ofPattern("hh:mm a").format(pickedTime)
@@ -141,7 +148,8 @@ fun FastingAppUI(navController: NavController) {
 
                 ) {
                 Canvas(modifier=Modifier.fillMaxSize()) {
-                    val value = currentTime.toFloat()/(valueSelected*60*60)
+//                    val value = currentTime.toFloat()/(valueSelected*60*60)
+                    val value = currentTime.toFloat()
                     val sweepAngle = 360f * value
                     drawArc(
                         color = Color.LightGray,
@@ -174,28 +182,91 @@ fun FastingAppUI(navController: NavController) {
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Timer countdown
-                    val hours = (currentTime / (60 * 60 ))
-                    val minutes = ((currentTime % (60 * 60)) / (60))
-                    if(isTimeRunning) {
+//                    // Timer countdown
+                    var remainingTime by remember { mutableStateOf(0L) } // waktu tersisa
+                    val predictedEndTime = fastingState.value.predictedEndTime ?: 0L
+
+
+                    LaunchedEffect(fastingState.value.predictedEndTime) {
+                        while (remainingTime > 0) {
+                            delay(1000L)
+                            remainingTime = maxOf(predictedEndTime - System.currentTimeMillis(), 0L)
+                        }
+                    }
+
+                    val hours = (remainingTime / (1000 * 60 * 60)).toInt()
+                    val minutes = ((remainingTime / (1000 * 60)) % 60).toInt()
+                    val seconds = ((remainingTime / 1000) % 60).toInt()
+
+                    val time = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+
+
+
+//                    if(fastingState.value.isWaiting) {
+//                        val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+//                        val startFasting = LocalTime.parse(fastingState.value.startTime, formatter) // Konversi String ke LocalTime
+//                        val doneFasting = LocalTime.parse(fastingState.value.endTime, formatter)
+//                        val rightNowTime = LocalTime.now()
+//                        if (todayString==fastingState.value.startDate) {
+//                            // Kasus tidak lintas hari
+//                            if (rightNowTime >= startFasting && rightNowTime < doneFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, true, false, fastingState.value.predictedEndTime, fastingState.value.startDate, "", "")
+//                            } else if (rightNowTime >= doneFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+//                            }
+//                        } else {
+//                            // Kasus lintas hari
+//                            if (rightNowTime >= startFasting || rightNowTime < doneFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, true, false, fastingState.value.predictedEndTime, fastingState.value.startDate, "", "")
+//                            } else if (rightNowTime >= doneFasting && rightNowTime < startFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+//                            }
+//                        }
+//                        fetchDataFasting(fastingState, fastingState.value.startTime)
+//                    }
+
+                    if(fastingState.value.isFasting) {
+//                        val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+//                        val startFasting = LocalTime.parse(fastingState.value.startTime, formatter) // Konversi String ke LocalTime
+//                        val doneFasting = LocalTime.parse(fastingState.value.endTime, formatter)
+//                        val rightNowTime = LocalTime.now()
+//                        if (todayString==fastingState.value.startDate) {
+//                            // Kasus tidak lintas hari
+//                            if (rightNowTime >= doneFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+//                            }
+//                        } else {
+//                            // Kasus lintas hari
+//                            if (rightNowTime >= doneFasting && rightNowTime < startFasting) {
+//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+//                            }
+//
+//                        }
+//                        fetchDataFasting(fastingState, fastingState.value.startTime)
                         Text(text="Remaining", fontSize = 16.sp, color = Color(0xFF5624C4))
                         Text(
-                            text = String.format("%02d:%02d", hours, minutes),
+                            text = time,
                             fontSize = 40.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF5624C4)
                         )
                         Button(
                             onClick = {
-                                isTimeRunning=!isTimeRunning
+                                fastingState.value.isFasting=false
+                                val now: String = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, now)
                             },
 //                            colors = ButtonDefaults.buttonColors(
 //                                backgroundColor = Color.Blue
 //                            )
                         ){
                             Text(text="Stop", fontSize = 18.sp)
+//                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
                     }else {
+                        val duration = valueSelected * 60 * 60 * 1000 // Durasi dalam milidetik
+                        endTime = System.currentTimeMillis() + duration
+                        remainingTime = duration.toLong()
                         Button(
                             onClick = {
                                 if (isTimeRunning) {
@@ -230,7 +301,6 @@ fun FastingAppUI(navController: NavController) {
                                     onClick ={
                                         selectedItem = "12:12"
                                         valueSelected = 12
-                                        currentTime = valueSelected*60*60
                                         expanded = false
                                     })
                                 HorizontalDivider()
@@ -238,7 +308,6 @@ fun FastingAppUI(navController: NavController) {
                                     onClick ={
                                         selectedItem = "14:10"
                                         valueSelected=14
-                                        currentTime = valueSelected*60*60
                                         expanded = false
                                     })
                                 HorizontalDivider()
@@ -246,32 +315,22 @@ fun FastingAppUI(navController: NavController) {
                                     onClick ={
                                         selectedItem = "16:8"
                                         valueSelected=16
-                                        currentTime = valueSelected*60*60
                                         expanded = false
                                     })
                             }
                         }
 
-
-
-                        LaunchedEffect(key1=currentTime,key2=isTimeRunning) {
-                            if(isTimeRunning&& currentTime > 0) {
-                                delay(1000L)
-                                currentTime-=1
-                                value=currentTime.toFloat()/(valueSelected*60*60)
-                            }else if (currentTime <= 0) {
-                                isTimeRunning = false // Hentikan countdown jika waktu habis
-                            }
-                        }
-
-
                         // Start button
                         Button(onClick = {
-                            isTimeRunning = true
+                            fastingState.value.isFasting = true
                             currentTime = valueSelected*60*60
                             pickedTime = LocalTime.now()
+                            endTime = System.currentTimeMillis() + currentTime * 1000
+                            addFastingData(formattedTime, valueSelected,formattedStopTime,true, false,endTime, todayString, "","")
+                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }) {
                             Text(text = "Start", fontSize = 18.sp)
+//                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
                     }
 
@@ -296,10 +355,16 @@ fun FastingAppUI(navController: NavController) {
                 .padding(30.dp)
         ) {
             Row() {
+                var beginTime = ""
+                if (fastingState.value.isFasting || fastingState.value.isWaiting) {
+                    beginTime = fastingState.value.startTime
+                } else {
+                    beginTime = formattedTime
+                }
 
-                TimeOption(label = "Begin", time = formattedTime)
+                TimeOption(label = "Begin", time = beginTime)
                 IconButton(onClick = {
-                    if(isTimeRunning) {
+                    if(fastingState.value.isFasting) {
                         timeDialogState.hide()
                     }else {
                         timeDialogState.show()
@@ -308,7 +373,13 @@ fun FastingAppUI(navController: NavController) {
                     Icon(imageVector = Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(25.dp))
                 }
             }
-            TimeOption(label = "Stop", time = formattedStopTime)
+            var stopTimeLocal = ""
+            if (fastingState.value.isFasting || fastingState.value.isWaiting) {
+                stopTimeLocal = fastingState.value.endTime
+            } else {
+                stopTimeLocal = formattedStopTime
+            }
+            TimeOption(label = "Stop", time = stopTimeLocal)
         }
         val context = LocalContext.current
         MaterialDialog(
@@ -320,6 +391,11 @@ fun FastingAppUI(navController: NavController) {
                         "Selected ${formattedTime}",
                         Toast.LENGTH_LONG
                     ).show()
+                    val currentDate = java.time.LocalDate.now() // Tanggal hari ini
+                    val dateTime = LocalDateTime.of(currentDate, pickedTime)
+                    val timeMillis = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
+                    val endTime = timeMillis + currentTime * 1000
+                    addFastingData(formattedTime, valueSelected,formattedStopTime,false, true, endTime, todayString, "", "")
                 }
                 negativeButton(text="Cancel") {
 
@@ -332,6 +408,7 @@ fun FastingAppUI(navController: NavController) {
                 timeRange = LocalTime.MIN..LocalTime.MAX
             ) {
                 pickedTime = it
+
             }
         }
 
@@ -381,31 +458,21 @@ fun FastingAppUI(navController: NavController) {
                     .clickable { navController.navigate("calorie") }
 
             ) {
+                val calorieState = remember { mutableStateOf(totalCalorie(0,0,0,0,0)) }
+                fetchDataCalorie(calorieState)
+                val targetCalorie = 2000
+                val progress = (calorieState.value.totalCalories.toFloat() / targetCalorie) * 100
                 Text(text = "Calorie Intake", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                glass(130)
+                Spacer(modifier = Modifier.height(0.dp))
+                progressCircle(100, progress)
+                Spacer(modifier = Modifier.height(0.dp))
                 Text(
-                    text = "${totalIntake.toString()} / ${targetIntake.toString()} ml",
+                    text = "${calorieState.value.totalCalories} / 2000 kcal",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
             }
-
-//            IntakeBox(
-//                label = "Water Intake",
-//                value = "500/2000 ml",
-//                color = Color(0xFF98E9FF),
-//                navController = navController,
-//                target = "waterIntake"
-//            )
-//            IntakeBox(
-//                label = "Calorie Intake",
-//                value = "2550/2500 cal",
-//                color = Color(0XFFFFD0D0),
-//                navController = navCo
-        //                ntroller,
-//                target = "calorie"
-//            )
 
             }
         }
@@ -448,30 +515,137 @@ fun ReminderBox() {
     }
 }
 
+data class fastingData (
+    var startTime: String,
+    var duration: Int,
+    var endTime:String,
+    var isFasting:Boolean,
+    var isWaiting:Boolean,
+    var predictedEndTime: Long,
+    var startDate:String,
+    var endDate:String,
+    var actualEndTime:String
+)
+
+fun addFastingData(
+    startTime: String,
+    duration: Int,
+    endTime:String,
+    isFasting:Boolean,
+    isWaiting: Boolean,
+    predictedEndTime: Long,
+    startDate:String,
+    endDate:String,
+    actualEndTime: String
+) {
+    val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
+    val documentId = "${todayString}_$formattedStartTime"
+    // Dokumen untuk tanggal startTime
+    val fastingStartDoc = hashMapOf(
+        "startTime" to startTime,
+        "duration" to duration,
+        "isFasting" to isFasting,
+        "isWaiting" to isWaiting,
+        "predictedEndTime" to predictedEndTime,
+        "endTime" to endTime,
+        "startDate" to startDate,
+        "endDate" to endDate,
+        "actualEndTime" to actualEndTime
+    )
+    db.collection("Fasting Data")
+        .document("${userId}")
+        .collection("$todayString")
+        .document("$documentId")
+        .set(fastingStartDoc)
+        .addOnSuccessListener {
+            Log.d("Firebase Fasting", "Fasting data saved")
+        }
+        .addOnFailureListener { exception ->
+            Log.d("Firebase Fasting", "Error adding entry: ${exception.message}")
+        }
+}
+
+fun saveFastingData(
+    startTime: String,
+    duration: Int,
+    endTime:String,
+    isFasting:Boolean,
+    isWaiting: Boolean,
+    predictedEndTime: Long,
+    startDate:String,
+    endDate:String,
+    actualEndTime: String
+) {
+    val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
+    val documentId = "${todayString}_$formattedStartTime"
+    db.collection("Fasting Data")
+        .document("${userId}")
+        .collection("$todayString")
+        .whereEqualTo("isFasting", true)
+        .get()
+        .addOnSuccessListener { documents ->
+            for (document in documents) {
+                val documentRef = document.reference
+                val fastingStartDoc = hashMapOf(
+                    "startTime" to startTime,
+                    "duration" to duration,
+                    "isFasting" to isFasting,
+                    "isWaiting" to isWaiting,
+                    "predictedEndTime" to predictedEndTime,
+                    "endTime" to endTime,
+                    "startDate" to startDate,
+                    "endDate" to endDate,
+                    "actualEndTime" to actualEndTime
+                )
+                documentRef.update(fastingStartDoc as Map<String, Any>)
+                    .addOnSuccessListener {
+                        Log.d("Firebase Fasting", "Fasting data updated")
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.d("Firebase Fasting", "Error updating entry: ${exception.message}")
+                    }
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.d(TAG, "Error fetching documents: ${exception.message}")
+        }
+
+
+}
+
+
 //@Composable
-//fun IntakeBox(label: String, value: String, color: Color, navController: NavController, target:String) {
-//    Column(
-//        verticalArrangement = Arrangement.spacedBy(16.dp),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        modifier = Modifier
-//            .width(180.dp)
-//            .clip(RoundedCornerShape(30.dp, 30.dp, 30.dp, 30.dp))
-//            .background(color)
-//            .padding(16.dp)
-//            .clickable { navController.navigate(target) }
-//
-//    ) {
-//        Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-//        Image(
-//            painter = painterResource(id = R.drawable.body), // Ganti dengan resource icon jam
-//            contentDescription = null,
-//            modifier = Modifier.size(64.dp)
-//        )
-//        Text(
-//            text = value,
-//            fontSize = 20.sp,
-//            fontWeight = FontWeight.Bold,
-//            color = Color.Black
-//        )
-//    }
-//}
+fun fetchDataFasting(fastingState: MutableState<fastingData>, startTime: String) {
+//    LaunchedEffect(Unit) {
+    val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
+    val documentId = "${todayString}_$formattedStartTime"
+    db.collection("Fasting Data")
+        .document("${userId}")
+        .collection("$todayString")
+//        .whereEqualTo("isFasting", true)
+        .get()
+        .addOnSuccessListener { documents ->
+            for (document in documents) {
+                val data = document.data
+                if (data != null && (data["isFasting"] == true)) {
+                    // Proses setiap dokumen yang memenuhi syarat
+                    val fastingStateData = fastingData(
+                        startTime = data["startTime"] as? String ?: "",
+                        duration = (data["duration"] as? Number)?.toInt() ?: 0,
+                        endTime = data["endTime"] as? String ?: "",
+                        isFasting = data["isFasting"] as? Boolean ?: false,
+                        isWaiting = data["isWaiting"] as? Boolean ?: false,
+                        predictedEndTime = (data["predictedEndTime"] as? Number)?.toLong() ?: 0L,
+                        startDate = data["startDate"] as? String ?: "",
+                        endDate = data["endDate"] as? String ?: "",
+                        actualEndTime = data["actualEndTime"] as? String ?: ""
+                    )
+                    fastingState.value = fastingStateData
+                }
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.d(TAG, "Current data: null", exception)
+        }
+
+}
