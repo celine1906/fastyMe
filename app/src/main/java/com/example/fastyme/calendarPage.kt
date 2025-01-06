@@ -24,8 +24,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
-@Serializable
-object Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

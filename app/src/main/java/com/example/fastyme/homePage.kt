@@ -65,14 +65,17 @@ import kotlinx.serialization.Serializable
 import progressCircle
 import totalCalorie
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
+import java.util.Calendar
 
 
 @Serializable
@@ -82,6 +85,7 @@ object Dashboard
 fun FastingAppUI(navController: NavController) {
     val fastingState = remember { mutableStateOf(fastingData("",0,"",false, false,0,"","","")) }
     fetchDataFasting(fastingState, fastingState.value.startTime)
+    var remainingTime by remember { mutableStateOf(0L) } // waktu tersisa
 
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("12:12") }
@@ -147,43 +151,51 @@ fun FastingAppUI(navController: NavController) {
                     },
 
                 ) {
-                Canvas(modifier=Modifier.fillMaxSize()) {
-//                    val value = currentTime.toFloat()/(valueSelected*60*60)
-                    val value = currentTime.toFloat()
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    // Nilai perhitungan proporsi waktu berjalan terhadap total waktu (12 jam)
+                    val totalTime = fastingState.value.duration*60*60*1000
+                    val value = 1f-(remainingTime.toFloat() / totalTime.toFloat())
                     val sweepAngle = 360f * value
+
+                    // Lingkaran abu-abu penuh
                     drawArc(
                         color = Color.LightGray,
                         startAngle = -90f,
                         sweepAngle = 360f,
                         useCenter = false,
                         size = Size(size.width.toFloat(), size.height.toFloat()),
-                        style = Stroke(width = 16.dp.toPx(), cap= StrokeCap.Round)
+                        style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
                     )
+
+                    // Lingkaran biru sesuai waktu berjalan
                     drawArc(
                         color = Color.Blue,
                         startAngle = -90f,
                         sweepAngle = sweepAngle,
                         useCenter = false,
                         size = Size(size.width.toFloat(), size.height.toFloat()),
-                        style = Stroke(width = 16.dp.toPx(), cap= StrokeCap.Round)
+                        style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
                     )
-                    val center = Offset(size.width / 2f, size.height / 2f) // Pusat lingkaran
-                    val angleInRadians = Math.toRadians((sweepAngle - 90).toDouble()).toFloat() // Konversi derajat ke radian
-                    val radius = size.width / 2f
-                    val x = center.x + radius * cos(angleInRadians) // Posisi X titik
-                    val y = center.y + radius * sin(angleInRadians) // Posisi Y titik
 
+                    // Menghitung posisi titik cyan
+                    val center = Offset(size.width / 2f, size.height / 2f)
+                    val angleInRadians = Math.toRadians((sweepAngle - 90).toDouble()).toFloat()
+                    val radius = size.width / 2f
+                    val x = center.x + radius * cos(angleInRadians)
+                    val y = center.y + radius * sin(angleInRadians)
+
+                    // Menampilkan titik cyan yang bergerak
                     drawPoints(
                         points = listOf(Offset(x, y)),
                         pointMode = PointMode.Points,
                         color = Color.Cyan,
-                        strokeWidth = (strokeWidth * 4f).toPx(),
+                        strokeWidth = 16.dp.toPx(),
                         cap = StrokeCap.Round
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 //                    // Timer countdown
-                    var remainingTime by remember { mutableStateOf(0L) } // waktu tersisa
+
                     val predictedEndTime = fastingState.value.predictedEndTime ?: 0L
 
 
@@ -191,6 +203,16 @@ fun FastingAppUI(navController: NavController) {
                         while (remainingTime > 0) {
                             delay(1000L)
                             remainingTime = maxOf(predictedEndTime - System.currentTimeMillis(), 0L)
+                        }
+                        // Logika yang dijalankan ketika waktu puasa selesai
+                        if (remainingTime == 0L) {
+                            // Jalankan logika yang diinginkan, seperti menampilkan notifikasi atau mengubah UI
+                            saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+                            if (todayString!=fastingState.value.startDate) {
+                                // Kasus lintas hari
+                                addFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
+                            }
+                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
                     }
 
@@ -201,48 +223,7 @@ fun FastingAppUI(navController: NavController) {
                     val time = String.format("%02d:%02d:%02d", hours, minutes, seconds)
 
 
-
-//                    if(fastingState.value.isWaiting) {
-//                        val formatter = DateTimeFormatter.ofPattern("hh:mm a")
-//                        val startFasting = LocalTime.parse(fastingState.value.startTime, formatter) // Konversi String ke LocalTime
-//                        val doneFasting = LocalTime.parse(fastingState.value.endTime, formatter)
-//                        val rightNowTime = LocalTime.now()
-//                        if (todayString==fastingState.value.startDate) {
-//                            // Kasus tidak lintas hari
-//                            if (rightNowTime >= startFasting && rightNowTime < doneFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, true, false, fastingState.value.predictedEndTime, fastingState.value.startDate, "", "")
-//                            } else if (rightNowTime >= doneFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
-//                            }
-//                        } else {
-//                            // Kasus lintas hari
-//                            if (rightNowTime >= startFasting || rightNowTime < doneFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, true, false, fastingState.value.predictedEndTime, fastingState.value.startDate, "", "")
-//                            } else if (rightNowTime >= doneFasting && rightNowTime < startFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
-//                            }
-//                        }
-//                        fetchDataFasting(fastingState, fastingState.value.startTime)
-//                    }
-
                     if(fastingState.value.isFasting) {
-//                        val formatter = DateTimeFormatter.ofPattern("hh:mm a")
-//                        val startFasting = LocalTime.parse(fastingState.value.startTime, formatter) // Konversi String ke LocalTime
-//                        val doneFasting = LocalTime.parse(fastingState.value.endTime, formatter)
-//                        val rightNowTime = LocalTime.now()
-//                        if (todayString==fastingState.value.startDate) {
-//                            // Kasus tidak lintas hari
-//                            if (rightNowTime >= doneFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
-//                            }
-//                        } else {
-//                            // Kasus lintas hari
-//                            if (rightNowTime >= doneFasting && rightNowTime < startFasting) {
-//                                saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, fastingState.value.endTime)
-//                            }
-//
-//                        }
-//                        fetchDataFasting(fastingState, fastingState.value.startTime)
                         Text(text="Remaining", fontSize = 16.sp, color = Color(0xFF5624C4))
                         Text(
                             text = time,
@@ -578,74 +559,115 @@ fun saveFastingData(
 ) {
     val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
     val documentId = "${todayString}_$formattedStartTime"
-    db.collection("Fasting Data")
-        .document("${userId}")
-        .collection("$todayString")
-        .whereEqualTo("isFasting", true)
-        .get()
-        .addOnSuccessListener { documents ->
-            for (document in documents) {
-                val documentRef = document.reference
-                val fastingStartDoc = hashMapOf(
-                    "startTime" to startTime,
-                    "duration" to duration,
-                    "isFasting" to isFasting,
-                    "isWaiting" to isWaiting,
-                    "predictedEndTime" to predictedEndTime,
-                    "endTime" to endTime,
-                    "startDate" to startDate,
-                    "endDate" to endDate,
-                    "actualEndTime" to actualEndTime
-                )
-                documentRef.update(fastingStartDoc as Map<String, Any>)
-                    .addOnSuccessListener {
-                        Log.d("Firebase Fasting", "Fasting data updated")
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.d("Firebase Fasting", "Error updating entry: ${exception.message}")
-                    }
-            }
-        }
-        .addOnFailureListener { exception ->
-            Log.d(TAG, "Error fetching documents: ${exception.message}")
-        }
+    val lastWeekDates = getLastWeekDates()
+    var fastingFound = false
+
+    val fastingStartDoc = hashMapOf(
+        "startTime" to startTime,
+        "duration" to duration,
+        "isFasting" to isFasting,
+        "isWaiting" to isWaiting,
+        "predictedEndTime" to predictedEndTime,
+        "endTime" to endTime,
+        "startDate" to startDate,
+        "endDate" to endDate,
+        "actualEndTime" to actualEndTime
+    )
 
 
-}
-
-
-//@Composable
-fun fetchDataFasting(fastingState: MutableState<fastingData>, startTime: String) {
-//    LaunchedEffect(Unit) {
-    val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
-    val documentId = "${todayString}_$formattedStartTime"
-    db.collection("Fasting Data")
-        .document("${userId}")
-        .collection("$todayString")
-//        .whereEqualTo("isFasting", true)
-        .get()
-        .addOnSuccessListener { documents ->
-            for (document in documents) {
-                val data = document.data
-                if (data != null && (data["isFasting"] == true)) {
-                    // Proses setiap dokumen yang memenuhi syarat
-                    val fastingStateData = fastingData(
-                        startTime = data["startTime"] as? String ?: "",
-                        duration = (data["duration"] as? Number)?.toInt() ?: 0,
-                        endTime = data["endTime"] as? String ?: "",
-                        isFasting = data["isFasting"] as? Boolean ?: false,
-                        isWaiting = data["isWaiting"] as? Boolean ?: false,
-                        predictedEndTime = (data["predictedEndTime"] as? Number)?.toLong() ?: 0L,
-                        startDate = data["startDate"] as? String ?: "",
-                        endDate = data["endDate"] as? String ?: "",
-                        actualEndTime = data["actualEndTime"] as? String ?: ""
-                    )
-                    fastingState.value = fastingStateData
+    for (day in lastWeekDates) {
+        db.collection("Fasting Data")
+            .document(userId)
+            .collection(day)
+            .whereEqualTo("isFasting", true)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    val documentRef = document.reference
+                    documentRef.update(fastingStartDoc as Map<String, Any>)
+                        .addOnSuccessListener {
+                            Log.d("Firebase Fasting", "Fasting data updated on $day")
+                            fastingFound = true
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.d("Firebase Fasting", "Error updating entry: ${exception.message}")
+                        }
+                    if (fastingFound) break
                 }
             }
-        }
-        .addOnFailureListener { exception ->
-            Log.d(TAG, "Current data: null", exception)
-        }
+            .addOnFailureListener { exception ->
+                Log.d("Firebase Fasting", "Error fetching documents for $day: ${exception.message}")
+            }
+
+        if (fastingFound) break
+    }
+}
+
+// Fungsi untuk mendapatkan daftar tanggal selama seminggu terakhir
+fun getLastWeekDates(): List<String> {
+    val dates = mutableListOf<String>()
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val calendar = Calendar.getInstance()
+
+    // Tambahkan tanggal hari ini ke dalam daftar
+    dates.add(dateFormat.format(calendar.time))
+
+    // Iterasi untuk 6 hari sebelumnya
+    for (i in 1..3) {
+        calendar.add(Calendar.DATE, -1)
+        dates.add(dateFormat.format(calendar.time))
+    }
+
+    return dates
+}
+
+fun fetchDataFasting(fastingState: MutableState<fastingData>, startTime: String) {
+    val lastWeekDates = getLastWeekDates()
+    var fastingFound = false
+
+    for (day in lastWeekDates) {
+        db.collection("Fasting Data")
+            .document(userId)
+            .collection(day)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    val data = document.data
+                    if (data != null && (data["isFasting"] == true)) {
+                        // Proses data jika ditemukan puasa aktif
+                        val fastingStateData = fastingData(
+                            startTime = data["startTime"] as? String ?: "",
+                            duration = (data["duration"] as? Number)?.toInt() ?: 0,
+                            endTime = data["endTime"] as? String ?: "",
+                            isFasting = data["isFasting"] as? Boolean ?: false,
+                            isWaiting = data["isWaiting"] as? Boolean ?: false,
+                            predictedEndTime = (data["predictedEndTime"] as? Number)?.toLong() ?: 0L,
+                            startDate = data["startDate"] as? String ?: "",
+                            endDate = data["endDate"] as? String ?: "",
+                            actualEndTime = data["actualEndTime"] as? String ?: ""
+                        )
+                        fastingState.value = fastingStateData
+                        fastingFound = true
+                        Log.d("Firebase", "Fasting data found on $day")
+                        break
+                    }
+                }
+
+                if (!fastingFound) {
+                    Log.d("Firebase", "No active fasting data found on $day")
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.d("Firebase", "Error fetching documents for $day: ${exception.message}")
+            }
+
+        // Hentikan pencarian jika ditemukan puasa aktif
+        if (fastingFound) break
+    }
+
+    if (!fastingFound) {
+        // Lakukan sesuatu jika tidak ada data puasa aktif ditemukan selama seminggu terakhir
+        Log.d("Firebase", "No active fasting data found in the last week")
+    }
 
 }
