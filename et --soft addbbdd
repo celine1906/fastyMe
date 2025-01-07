@@ -1,0 +1,26 @@
+[33m300f0c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: merge origin/main: Fast-forward
+[33m7bed4d7[m HEAD@{1}: reset: moving to 7bed4d73f2604b8f1224bff3a9d74c3559a3e2c5
+[33m300f0c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{2}: merge origin/main: Fast-forward
+[33m7bed4d7[m HEAD@{3}: reset: moving to 7bed4d73f2604b8f1224bff3a9d74c3559a3e2c5
+[33maddbbdd[m HEAD@{4}: reset: moving to HEAD
+[33maddbbdd[m HEAD@{5}: reset: moving to HEAD
+[33maddbbdd[m HEAD@{6}: commit: update schedule fasting
+[33m300f0c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{7}: reset: moving to ORIG_HEAD
+[33m300f0c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{8}: reset: moving to HEAD
+[33m300f0c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{9}: merge origin/main: Fast-forward
+[33m7bed4d7[m HEAD@{10}: commit: fitur countdown paling final
+[33m7959053[m HEAD@{11}: commit: nyempurnain fitur calorie n countdown
+[33mb5b9ff2[m HEAD@{12}: commit: masukin respon hitung kalori ke db
+[33m36ef6eb[m HEAD@{13}: commit: nambah calorie intake
+[33mf0b8782[m HEAD@{14}: merge origin/main: Fast-forward
+[33m6229790[m HEAD@{15}: merge origin/main: Fast-forward
+[33m2917e1c[m HEAD@{16}: merge origin/main: Fast-forward
+[33m0bc6502[m HEAD@{17}: merge origin/main: Fast-forward
+[33mbe5596a[m HEAD@{18}: commit: water intake
+[33md4b95d5[m HEAD@{19}: pull origin main: Fast-forward
+[33m466d905[m HEAD@{20}: commit: progress dashboard
+[33m7240137[m HEAD@{21}: commit (merge): Merge remote-tracking branch 'origin/main'
+[33m97ac949[m HEAD@{22}: commit: pull repository
+[33m15cad07[m HEAD@{23}: commit: update
+[33m68f59b6[m HEAD@{24}: Branch: renamed refs/heads/master to refs/heads/main
+[33m68f59b6[m HEAD@{26}: commit (initial): first commit

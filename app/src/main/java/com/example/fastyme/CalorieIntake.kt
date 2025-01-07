@@ -59,6 +59,7 @@ import com.example.fastyme.userId
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.generationConfig
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.SetOptions.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -158,7 +159,7 @@ fun updateDatabaseIntakeCalorie(total: Int, totalB:Int, totalL:Int, totalD:Int, 
     )
     db.collection("Calorie Intake")
         .document("${userId}_$todayString")
-        .set(data, SetOptions.merge())
+        .set(data, merge())
         .addOnSuccessListener {
             Log.d("Firebase", "Data updated successfully")
         }

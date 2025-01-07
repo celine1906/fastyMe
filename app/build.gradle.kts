@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -49,10 +50,18 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildToolsVersion = "35.0.0"
 }
 
 dependencies {
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.ui.test.android)
+    implementation(libs.androidx.ui.test.android)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.runtime.livedata)
+    implementation(libs.firebase.firestore.ktx)
     val nav_version = "2.8.2"
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
@@ -76,4 +85,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     var fakerVersion = "1.16.0"
     implementation("io.github.serpro69:kotlin-faker:$fakerVersion")
+    implementation("com.google.android.gms:play-services-auth:20.6.0")
+    implementation("com.google.firebase:firebase-analytics-ktx:21.3.0")
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.6")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 }
