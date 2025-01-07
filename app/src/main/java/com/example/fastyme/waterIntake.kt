@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -50,7 +51,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -155,11 +159,6 @@ fun glass(sizes:Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaterIntake(userId: String, navController: NavController) {
-//    var totalIntake by remember { mutableStateOf(0) }
-//    val targetIntake = 2100
-    val progress = (totalIntake.toFloat() / targetIntake) * 100
-
-
     var activeButtonIndex by remember { mutableStateOf(-1) }
     var savedValue by remember { mutableStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
@@ -203,18 +202,33 @@ fun WaterIntake(userId: String, navController: NavController) {
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            item {
             // Header
+            val adviceText = when {
+                totalIntake > targetIntake -> "Warning: You have exceeded your water intake limit for the day! " +
+                        "Consider slowing down to avoid overhydration."
+                totalIntake == targetIntake -> "Great job! You have reached your water intake goal for the day."
+                totalIntake < targetIntake && totalIntake > 0 -> "You are on track with your water intake. " +
+                        "Keep sipping to stay hydrated!"
+                totalIntake == 0 -> "You haven't logged any water intake yet. Start drinking water to stay hydrated!"
+                else -> "Keep an eye on your water intake and make sure to stay hydrated!"
+            }
+
+            val textColor = if (totalIntake > targetIntake) Color.Red else Color.Black
+
             Text(
-                text = "You are on the way!",
+                text = adviceText,
+                color = textColor,
+                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -234,7 +248,14 @@ fun WaterIntake(userId: String, navController: NavController) {
             )
 
             Text(
-                text = "$totalIntake ml / $targetIntake ml",
+                text = buildAnnotatedString {
+                    append("$totalIntake / $targetIntake ml")
+                    if (totalIntake > targetIntake) {
+                        addStyle(style = SpanStyle(color = Color.Red), start = 0, end = "$totalIntake".length)
+                    } else {
+                        addStyle(style = SpanStyle(color = Color.Black), start = 0, end = "$totalIntake".length)
+                    }
+                },
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -369,7 +390,7 @@ fun WaterIntake(userId: String, navController: NavController) {
                     contentColor = Color.White         // Warna teks atau ikon menjadi hitam
                 ),
                 elevation = ButtonDefaults.buttonElevation(0.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+//                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Box(
                     modifier = Modifier
@@ -380,6 +401,10 @@ fun WaterIntake(userId: String, navController: NavController) {
                     Icon(Icons.Default.Add, contentDescription = "Show Dialog")
                 }
             }
+            }
+
         }
     }
+
 }
+

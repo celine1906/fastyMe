@@ -1,5 +1,6 @@
 import android.content.ContentValues.TAG
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,9 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +49,8 @@ import com.example.fastyme.R
 import com.example.fastyme.RecipeCategoryScreen
 import com.example.fastyme.RecipePage
 import com.example.fastyme.db
+import com.example.fastyme.fastingData
+import com.example.fastyme.fetchDataFasting
 import com.example.fastyme.fillPercentage
 import com.example.fastyme.targetIntake
 import com.example.fastyme.todayString
@@ -261,6 +268,7 @@ fun CalorieIntake(userId: String, navController: NavController) {
     val targetCalorie = 2000
     val progress = (calorieState.value.totalCalories.toFloat() / targetCalorie) * 100
     var showDialog by remember { mutableStateOf(false) }
+    var showErrorMessage by remember { mutableStateOf(false) }
     var inputCalorie by remember { mutableStateOf("") }
     var typeofMeal by remember { mutableStateOf("") }
 
@@ -293,7 +301,28 @@ fun CalorieIntake(userId: String, navController: NavController) {
         ) {
             item {
                 // Header
-                Text("You are on the way!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+                val adviceText = when {
+                    calorieState.value.totalCalories > targetCalorie -> "Warning: " +
+                            "You have exceeded your calorie limit! Don't take another meal!"
+                    calorieState.value.totalCalories == targetCalorie -> "You have reached your calorie limit. Don't take another meal!"
+                    calorieState.value.totalCalories < targetCalorie && calorieState.value.totalCalories > 0 -> "You are within your calorie limit. " +
+                            "Keep it up!"
+                    calorieState.value.totalCalories == 0 -> "You haven't logged any calories yet. " +
+                            "Start tracking your intake!"
+                    else -> "You are within your calorie limit. " +
+                            "Keep it up!"
+                }
+                val textColor = if (calorieState.value.totalCalories > targetCalorie) Color.Red else Color.Black
+
+                Text(
+                    text = adviceText,
+                    color = textColor,
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp,
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Progress Circle
@@ -303,16 +332,51 @@ fun CalorieIntake(userId: String, navController: NavController) {
 
                 // Intake Text
                 Text("You have consumed", fontSize = 16.sp)
-                Text("${calorieState.value.totalCalories} / $targetCalorie kcal", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = buildAnnotatedString {
+                        append("${calorieState.value.totalCalories} / $targetCalorie kcal")
+                        if (calorieState.value.totalCalories > targetCalorie) {
+                            addStyle(style = SpanStyle(color = Color.Red), start = 0, end = "$calorieState.value.totalCalories".length)
+                        } else {
+                            addStyle(style = SpanStyle(color = Color.Black), start = 0, end = "$calorieState.value.totalCalories".length)
+                        }
+                    },
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Medium
+                )
                 Text("today", fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(24.dp))
+                val fastingState = remember { mutableStateOf(fastingData("",0,"",false, false,0,"","","")) }
+                fetchDataFasting(fastingState, fastingState.value.startTime)
+                val context = LocalContext.current
 
                 // Meal Tracker List
-                MealTrackerItem("Breakfast", calorieState.value.totalBreakfast.toInt(), onPlusClick = { showDialog = true; typeofMeal="Breakfast" }, navController, R.drawable.breakfast, 500)
+                MealTrackerItem("Breakfast", calorieState.value.totalBreakfast.toInt(), onPlusClick = {
+                    if(!fastingState.value.isFasting) {
+                        showDialog = true
+                        typeofMeal="Breakfast"
+                    } else{
+                        showDialog = false
+                        Toast.makeText(context, "You're still fasting!", Toast.LENGTH_SHORT).show()
+                    } }, navController, R.drawable.breakfast, 500)
                 Spacer(modifier = Modifier.height(8.dp))
-                MealTrackerItem("Lunch", calorieState.value.totalLunch.toInt(), onPlusClick = { showDialog = true; typeofMeal="Lunch" }, navController, R.drawable.lunch, 700)
+                MealTrackerItem("Lunch", calorieState.value.totalLunch.toInt(), onPlusClick = {
+                    if(!fastingState.value.isFasting) {
+                        showDialog = true
+                        typeofMeal="Breakfast"
+                    } else{
+                        showDialog = false
+                        Toast.makeText(context, "You're still fasting!", Toast.LENGTH_SHORT).show()
+                    } }, navController, R.drawable.lunch, 700)
                 Spacer(modifier = Modifier.height(8.dp))
-                MealTrackerItem("Dinner", calorieState.value.totalDinner.toInt(), onPlusClick = { showDialog = true; typeofMeal="Dinner" }, navController, R.drawable.dinner, 600)
+                MealTrackerItem("Dinner", calorieState.value.totalDinner.toInt(), onPlusClick = {
+                    if(!fastingState.value.isFasting) {
+                        showDialog = true
+                        typeofMeal="Breakfast"
+                    } else{
+                        showDialog = false
+                        Toast.makeText(context, "You're still fasting!", Toast.LENGTH_SHORT).show()
+                    } }, navController, R.drawable.dinner, 600)
                 Spacer(modifier = Modifier.height(8.dp))
                 MealTrackerItem("Snack", calorieState.value.totalSnack.toInt(), onPlusClick = { showDialog = true; typeofMeal="Snack" }, navController, R.drawable.snack, 200)
             }
@@ -361,6 +425,7 @@ suspend fun modelCall(prompt: String): String {
                             value = inputCalorie,
                             onValueChange = { inputCalorie = it },
                             label = { Text("Enter calorie value") },
+                            placeholder = { Text("Example: 100 grams of brown rice, 150 grams of fried snapper, 100 grams of fried tofu, 50 grams of sauteed mustard greens") },
                             maxLines = 100,
                             modifier = Modifier.fillMaxWidth().height(480.dp)
                         )
@@ -390,9 +455,15 @@ suspend fun modelCall(prompt: String): String {
                                             }
                                             updateDatabaseIntakeCalorie(calorieState.value.totalCalories.toInt(), calorieState.value.totalBreakfast.toInt(), calorieState.value.totalLunch.toInt(), calorieState.value.totalDinner.toInt(), calorieState.value.totalSnack.toInt())
 
+                                            navController.navigate("detailCalorie/$typeofMeal")
+                                            showDialog = false
                                         } // Menyimpan data ke Firebase di MainThread
-                                        navController.navigate("detailCalorie/$typeofMeal")
-                                        showDialog = false
+                                        else {
+                                            showDialog = false
+                                            showErrorMessage = true
+                                        }
+
+
                                     }
                                 } catch (e: Exception) {
                                     Log.e("GeminiAPI", "Error: ${e.message}")
@@ -407,17 +478,41 @@ suspend fun modelCall(prompt: String): String {
             }
         }
 
-        // Detail Navigation Button
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Button(
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF673AB7))
-            ) {
-                Text("Detail", color = Color.White)
+        if(showErrorMessage) {
+            Dialog(onDismissRequest = {
+                showErrorMessage=false
+                showDialog=true
+            }) {
+                Box(
+                    modifier = Modifier
+                        .width(500.dp)
+                        .background(Color.White, RoundedCornerShape(8.dp))
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.warning),
+                            contentDescription = "warning",
+//                    contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Text(
+                            text = "Response failed. Please enter food with measurements for successful calculation. Example: \"100 grams of brown rice\"",
+                            textAlign = TextAlign.Justify,
+                            )
+                        Button(
+                            onClick = {
+                                showErrorMessage=false
+                                showDialog=true}
+                        ) {
+                            Text("Ok")
+                        }
+                    }
+                }
             }
         }
 
@@ -453,7 +548,18 @@ fun MealTrackerItem(name: String, calorie: Int, onPlusClick: () -> Unit, navCont
                 )
                 Column {
                     Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("$calorie / $amountLimit kcal", fontSize = 14.sp)
+
+                    Text(
+                        text = buildAnnotatedString {
+                            append("$calorie / $amountLimit kcal")
+                            if (calorie > amountLimit) {
+                                addStyle(style = SpanStyle(color = Color.Red), start = 0, end = "$calorie".length)
+                            } else {
+                                addStyle(style = SpanStyle(color = Color.Black), start = 0, end = "$calorie".length)
+                            }
+                        },
+                        fontSize = 14.sp
+                    )
                 }
             }
 

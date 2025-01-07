@@ -51,9 +51,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.google.firebase.firestore.SetOptions
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -85,9 +90,12 @@ object Dashboard
 fun FastingAppUI(navController: NavController) {
     val fastingState = remember { mutableStateOf(fastingData("",0,"",false, false,0,"","","")) }
     fetchDataFasting(fastingState, fastingState.value.startTime)
+    val scheduleState = remember { mutableStateOf(fastingSchedule("",0,"",false, 0,0,"")) }
+    fetchDataFastingSchedule(scheduleState)
     var remainingTime by remember { mutableStateOf(0L) } // waktu tersisa
-
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
+    var showWarning by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("12:12") }
     var valueSelected by remember { mutableStateOf(12) }
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -155,7 +163,13 @@ fun FastingAppUI(navController: NavController) {
                     // Nilai perhitungan proporsi waktu berjalan terhadap total waktu (12 jam)
                     val totalTime = fastingState.value.duration*60*60*1000
                     val value = 1f-(remainingTime.toFloat() / totalTime.toFloat())
-                    val sweepAngle = 360f * value
+                    var sweepAngle = 360f
+                    if(fastingState.value.isFasting) {
+                        sweepAngle = 360f * value
+                    } else {
+                        sweepAngle = 360f
+                    }
+
 
                     // Lingkaran abu-abu penuh
                     drawArc(
@@ -236,13 +250,10 @@ fun FastingAppUI(navController: NavController) {
                                 fastingState.value.isFasting=false
                                 val now: String = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
                                 saveFastingData(fastingState.value.startTime, fastingState.value.duration, fastingState.value.endTime, false, false, fastingState.value.predictedEndTime, fastingState.value.startDate, todayString, now)
+                                Toast.makeText(context, "Fasting stopped!", Toast.LENGTH_SHORT).show()
                             },
-//                            colors = ButtonDefaults.buttonColors(
-//                                backgroundColor = Color.Blue
-//                            )
                         ){
                             Text(text="Stop", fontSize = 18.sp)
-//                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
                     }else {
                         val duration = valueSelected * 60 * 60 * 1000 // Durasi dalam milidetik
@@ -298,6 +309,13 @@ fun FastingAppUI(navController: NavController) {
                                         valueSelected=16
                                         expanded = false
                                     })
+                                HorizontalDivider()
+                                DropdownMenuItem(text = { Text("20:4", textAlign = TextAlign.Center) },
+                                    onClick ={
+                                        selectedItem = "20:4"
+                                        valueSelected=20
+                                        expanded = false
+                                    })
                             }
                         }
 
@@ -309,9 +327,11 @@ fun FastingAppUI(navController: NavController) {
                             endTime = System.currentTimeMillis() + currentTime * 1000
                             addFastingData(formattedTime, valueSelected,formattedStopTime,true, false,endTime, todayString, "","")
                             fetchDataFasting(fastingState, fastingState.value.startTime)
+                            addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, false, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
+                            fetchDataFastingSchedule(scheduleState)
+                            Toast.makeText(context, "Fasting started!", Toast.LENGTH_SHORT).show()
                         }) {
                             Text(text = "Start", fontSize = 18.sp)
-//                            fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
                     }
 
@@ -320,9 +340,6 @@ fun FastingAppUI(navController: NavController) {
                 }
             }
         }
-
-
-//        Spacer(modifier = Modifier.height(24.dp))
 
 
 
@@ -337,8 +354,10 @@ fun FastingAppUI(navController: NavController) {
         ) {
             Row() {
                 var beginTime = ""
-                if (fastingState.value.isFasting || fastingState.value.isWaiting) {
+                if (fastingState.value.isFasting) {
                     beginTime = fastingState.value.startTime
+                } else if (!fastingState.value.isFasting && scheduleState.value.isWaiting) {
+                    beginTime = scheduleState.value.startTime
                 } else {
                     beginTime = formattedTime
                 }
@@ -355,8 +374,10 @@ fun FastingAppUI(navController: NavController) {
                 }
             }
             var stopTimeLocal = ""
-            if (fastingState.value.isFasting || fastingState.value.isWaiting) {
+            if (fastingState.value.isFasting) {
                 stopTimeLocal = fastingState.value.endTime
+            } else if (!fastingState.value.isFasting && scheduleState.value.isWaiting) {
+                stopTimeLocal = scheduleState.value.endTime
             } else {
                 stopTimeLocal = formattedStopTime
             }
@@ -366,17 +387,20 @@ fun FastingAppUI(navController: NavController) {
         MaterialDialog(
             dialogState = timeDialogState,
             buttons = {
-                positiveButton(text="Ok") {
-                    Toast.makeText(
-                        context,
-                        "Selected ${formattedTime}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    val currentDate = java.time.LocalDate.now() // Tanggal hari ini
-                    val dateTime = LocalDateTime.of(currentDate, pickedTime)
-                    val timeMillis = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
-                    val endTime = timeMillis + currentTime * 1000
-                    addFastingData(formattedTime, valueSelected,formattedStopTime,false, true, endTime, todayString, "", "")
+                positiveButton(text="OK") {
+                    val timeMillis = System.currentTimeMillis()
+                    val endTime = System.currentTimeMillis() + currentTime * 1000
+                    if(scheduleState.value.isWaiting) {
+                        showWarning=true
+                    } else {
+                        addFastingSchedule(formattedTime, valueSelected, formattedStopTime, true, timeMillis, endTime, todayString)
+                        fetchDataFastingSchedule(scheduleState)
+                        Toast.makeText(
+                            context,
+                            "Fasting scheduled at ${formattedTime}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
                 negativeButton(text="Cancel") {
 
@@ -389,9 +413,60 @@ fun FastingAppUI(navController: NavController) {
                 timeRange = LocalTime.MIN..LocalTime.MAX
             ) {
                 pickedTime = it
-
             }
         }
+
+            if(showWarning) {
+                Dialog(onDismissRequest = {
+                    showWarning=false
+                }) {
+                    Box(
+                        modifier = Modifier
+                            .width(500.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.warning_triangle),
+                                contentDescription = "warning",
+                                modifier = Modifier.size(100.dp)
+                            )
+                            Text(
+                                text = "A fasting schedule already exists for today. Are you sure you want to update it?",
+                                textAlign = TextAlign.Justify,
+                            )
+                            Button(
+                                onClick = {
+                                    showWarning=false
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    val timeMillis = System.currentTimeMillis()
+                                    val endTime = System.currentTimeMillis() + currentTime * 1000
+                                    addFastingSchedule(formattedTime, valueSelected, formattedStopTime, true, timeMillis, endTime, todayString)
+                                    fetchDataFastingSchedule(scheduleState)
+                                    showWarning=false
+                                    Toast.makeText(
+                                        context,
+                                        "Fasting scheduled at ${formattedTime}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            ) {
+                                Text("OK")
+                            }
+                        }
+                    }
+                }
+            }
 
 
 
@@ -420,7 +495,14 @@ fun FastingAppUI(navController: NavController) {
                 Text(text = "Water Intake", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 glass(130)
                 Text(
-                    text = "${totalIntake.toString()} / ${targetIntake.toString()} ml",
+                    text = buildAnnotatedString {
+                        append("$totalIntake / $targetIntake ml")
+                        if (totalIntake > targetIntake) {
+                            addStyle(style = SpanStyle(color = Color.Red), start = 0, end = "$totalIntake".length)
+                        } else {
+                            addStyle(style = SpanStyle(color = Color.Black), start = 0, end = "$totalIntake".length)
+                        }
+                    },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -448,7 +530,14 @@ fun FastingAppUI(navController: NavController) {
                 progressCircle(100, progress)
                 Spacer(modifier = Modifier.height(0.dp))
                 Text(
-                    text = "${calorieState.value.totalCalories} / 2000 kcal",
+                    text = buildAnnotatedString {
+                        append("${calorieState.value.totalCalories} / $targetCalorie kcal")
+                        if (calorieState.value.totalCalories > targetCalorie) {
+                            addStyle(style = SpanStyle(color = Color.Red), start = 0, end = "$calorieState.value.totalCalories".length)
+                        } else {
+                            addStyle(style = SpanStyle(color = Color.Black), start = 0, end = "$calorieState.value.totalCalories".length)
+                        }
+                    },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -669,5 +758,77 @@ fun fetchDataFasting(fastingState: MutableState<fastingData>, startTime: String)
         // Lakukan sesuatu jika tidak ada data puasa aktif ditemukan selama seminggu terakhir
         Log.d("Firebase", "No active fasting data found in the last week")
     }
-
 }
+
+
+data class fastingSchedule (
+    var startTime: String,
+    var duration: Int,
+    var endTime:String,
+    var isWaiting:Boolean,
+    var startTimeLong: Long,
+    var endTimeLong: Long,
+    var startDate:String,
+)
+
+fun addFastingSchedule(
+    startTime: String,
+    duration: Int,
+    endTime:String,
+    isWaiting:Boolean,
+    startTimeLong: Long,
+    endTimeLong: Long,
+    startDate:String
+) {
+    val formattedStartTime = startTime.replace(":", "").replace(" am", "").replace(" pm", "")
+    val documentId = "${todayString}_$formattedStartTime"
+    // Dokumen untuk tanggal startTime
+    val fastingStartDoc = hashMapOf(
+        "startTime" to startTime,
+        "duration" to duration,
+        "isWaiting" to isWaiting,
+        "endTime" to endTime,
+        "startDate" to startDate,
+        "startTimeLong" to startTimeLong,
+        "endTimeLong" to endTimeLong
+    )
+    db.collection("Fasting Schedule")
+        .document("${userId}")
+        .collection("Dates")
+        .document("$todayString")
+        .set(fastingStartDoc)
+        .addOnSuccessListener {
+            Log.d("Firebase Fasting", "Fasting data saved")
+        }
+        .addOnFailureListener { exception ->
+            Log.d("Firebase Fasting", "Error adding entry: ${exception.message}")
+        }
+}
+
+fun fetchDataFastingSchedule(fastingState: MutableState<fastingSchedule>) {
+        db.collection("Fasting Schedule")
+            .document("${userId}")
+            .collection("Dates")
+            .document("$todayString")
+            .get()
+            .addOnSuccessListener { data ->
+                    if (data != null && (data["isWaiting"] == true)) {
+                        // Proses data jika ditemukan puasa aktif
+                        val fastingStateData = fastingSchedule(
+                            startTime = data["startTime"] as? String ?: "",
+                            duration = (data["duration"] as? Number)?.toInt() ?: 0,
+                            endTime = data["endTime"] as? String ?: "",
+                            isWaiting = data["isWaiting"] as? Boolean ?: false,
+                            endTimeLong = (data["endTimeLong"] as? Number)?.toLong() ?: 0L,
+                            startTimeLong = (data["startTimeLong"] as? Number)?.toLong() ?: 0L,
+                            startDate = data["startDate"] as? String ?: "",
+                        )
+                        fastingState.value = fastingStateData
+                        Log.d("Firebase", "Fasting Schedule data found")
+                    }
+                }
+            .addOnFailureListener { exception ->
+                Log.d("Firebase", "Error fetching documents", exception)
+            }
+}
+
