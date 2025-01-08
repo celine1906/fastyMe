@@ -1,5 +1,6 @@
 package com.example.fastyme
 
+import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -19,15 +20,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,8 +70,12 @@ import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
 import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
 import co.yml.charts.ui.linechart.model.ShadowUnderLine
 import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.Period
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 
@@ -88,7 +97,7 @@ fun ProfilePage() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                profile()
+                profile(userId)
                 recommendation()
                 plan()
                 achievement()
@@ -100,12 +109,73 @@ fun ProfilePage() {
 
 }
 
+fun fetchUsersAnswer(userId: String, onComplete: (Map<String, String>) -> Unit) {
+    val db = Firebase.firestore
+    db.collection("usersAnswers")
+        .document(userId)
+        .collection("answers")
+        .get()
+        .addOnSuccessListener { result ->
+            val answers = mutableMapOf<String, String>()
+            for (document in result) {
+                val questionId = document.id
+                val answer = document.getString("answer") ?: ""
+                answers[questionId] = answer
+            }
+            onComplete(answers)
+        }
+        .addOnFailureListener { exception ->
+            Log.e("FirestoreError", "Failed to fetch answers: ${exception.message}")
+        }
+}
+
+@SuppressLint("UnrememberedMutableState")
 @Composable
-fun profile() {
+fun profile(userId: String) {
+    var userAnswers by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    // Fetch data on profile load
+    LaunchedEffect(userId) {
+        fetchUsersAnswer(userId) { answers ->
+            userAnswers = answers
+        }
+    }
+
+    // Recalculate age whenever userAnswers changes
+    val countAge by derivedStateOf {
+        userAnswers["age"]?.let { age ->
+            try {
+                val formatter = DateTimeFormatter.ofPattern("d/M/yyyy")
+                val birthdayDate = LocalDate.parse(age, formatter) // Format: "d/M/yyyy"
+                val currentDate = LocalDate.now()
+                Period.between(birthdayDate, currentDate).years
+            } catch (e: Exception) {
+                Log.e("AgeCalculationError", "Invalid birthday format: $age")
+                null
+            }
+        }
+    }
+
+    val (bmi, bmiCategory) = derivedStateOf {
+        val weight = userAnswers["weight"]?.toDoubleOrNull()
+        val height = userAnswers["height"]?.toDoubleOrNull()
+        if (weight != null && height != null && weight > 0 && height > 0) {
+            val heightInMeters = height / 100
+            val calculatedBmi = weight / (heightInMeters * heightInMeters)
+            val category = when {
+                calculatedBmi < 18.5 -> "Underweight"
+                calculatedBmi < 24.9 -> "Normal weight"
+                calculatedBmi < 29.9 -> "Overweight"
+                else -> "Obese"
+            }
+            calculatedBmi to category
+        } else null to null
+    }.value
+
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile Picture and Button
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -115,7 +185,6 @@ fun profile() {
                     .size(70.dp)
                     .clip(RoundedCornerShape(50.dp))
                     .background(Color(0xFFD9C2EC))
-
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.profileicon),
@@ -124,37 +193,133 @@ fun profile() {
                     contentScale = ContentScale.Crop
                 )
             }
-            Button(onClick = {
-
-            }) {
+            Button(onClick = { showEditDialog = true }) {
                 Text("Edit")
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp)) // Jarak antara Column
+        Spacer(modifier = Modifier.width(16.dp))
 
-        // User Information
         CardBox(
             content = {
-
-                Row(
-//                    modifier = Modifier.padding(16.dp).clip(RoundedCornerShape(10.dp)),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp)
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Age : ")
-                        Text("Sex : ")
-                        Text("BMI : ")
+                        Text("Age: ${countAge ?: "N/A"}")
+                        Text("Sex: ${userAnswers["gender"] ?: "N/A"}")
+                        Text("BMI: ${bmi?.let { String.format("%.2f", it) } ?: "Calculating..."}")
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Weight : ")
-                        Text("Height : ")
-                        Text("BMI : ")
+                        Text("Weight: ${userAnswers["weight"] ?: "N/A"} kg")
+                        Text("Height: ${userAnswers["height"] ?: "N/A"} cm")
+                        Text("Category: ${bmiCategory ?: "Calculating..."}")
                     }
                 }
             }
         )
     }
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            userId = userId,
+            currentAnswers = userAnswers,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedAnswers ->
+                saveAnswersToFirestore(userId, updatedAnswers) {
+                    fetchUsersAnswer(userId) { answers ->
+                        userAnswers = answers
+                    }
+                }
+                showEditDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun EditProfileDialog(
+    userId: String,
+    currentAnswers: Map<String, String>,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, String>) -> Unit
+) {
+    val weight = remember { mutableStateOf(currentAnswers["weight"] ?: "") }
+    val height = remember { mutableStateOf(currentAnswers["height"] ?: "") }
+    val goal = remember { mutableStateOf(currentAnswers["goal"] ?: "") }
+
+    val goalOptions = listOf("Weight loss", "Health maintenance", "Boosting energy", "Stay in shape")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Profile") },
+        text = {
+            Column {
+                TextField(
+                    value = weight.value,
+                    onValueChange = { weight.value = it },
+                    label = { Text("Weight (kg)") }
+                )
+
+                TextField(
+                    value = height.value,
+                    onValueChange = { height.value = it },
+                    label = { Text("Height (cm)") }
+                )
+
+                Text("Goal:")
+                goalOptions.forEach { option ->
+                    Button(
+                        onClick = { goal.value = option },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (goal.value == option) Color.Gray else Color.White
+                        ),
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text(option)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val updatedAnswers = mapOf(
+                    "weight" to weight.value,
+                    "height" to height.value,
+                    "goal" to goal.value
+                )
+                saveAnswersToFirestore(userId, updatedAnswers) {
+                    onSave(updatedAnswers)
+                }
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+fun saveAnswersToFirestore(userId: String, answers: Map<String, String>, onComplete: () -> Unit) {
+    val db = Firebase.firestore
+    db.collection("usersAnswers")
+        .document(userId)
+        .collection("answers")
+        .get()
+        .addOnSuccessListener { result ->
+            for ((key, value) in answers) {
+                db.collection("usersAnswers")
+                    .document(userId)
+                    .collection("answers")
+                    .document(key)
+                    .set(mapOf("answer" to value))
+            }
+            onComplete()
+        }
+        .addOnFailureListener { exception ->
+            Log.e("FirestoreError", "Failed to save answers: ${exception.message}")
+        }
 }
 
 @Composable
@@ -219,7 +384,24 @@ fun plan() {
 fun achievement() {
     CardBox(
         content = {
-            title("Achievement", R.drawable.achievement)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                title("Achievement", R.drawable.achievement)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.badge1),
+                        contentDescription = "First Challenges Completed!",
+                        modifier = Modifier.width(50.dp).height(70.dp)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.badge2),
+                        contentDescription = "Fasting 7 Day Streak!",
+                        modifier = Modifier.width(70.dp).height(70.dp)
+                    )
+                }
+            }
         }
     )
 }
@@ -478,6 +660,3 @@ fun fetchDataChart(selectedYear: Int, selectedMonth: Int, pointsData: MutableLis
             }
         }
 }
-
-
-
