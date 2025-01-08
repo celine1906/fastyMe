@@ -345,8 +345,8 @@ fun FastingAppUI(navController: NavController) {
                             pickedTime = LocalTime.now()
                             endTime = System.currentTimeMillis() + currentTime * 1000
                             addFastingData(formattedTime, valueSelected,formattedStopTime,true, false,endTime, todayString, "","")
-                            fetchDataFasting(fastingState, fastingState.value.startTime)
                             addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, false, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
+                            fetchDataFasting(fastingState, fastingState.value.startTime)
                             fetchDataFastingSchedule(scheduleState)
                             Toast.makeText(context, "Fasting started!", Toast.LENGTH_SHORT).show()
                         }) {
