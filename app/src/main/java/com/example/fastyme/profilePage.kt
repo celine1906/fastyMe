@@ -1,5 +1,6 @@
 package com.example.fastyme
 
+import co.yml.charts.common.model.Point
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,11 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,9 +48,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import com.google.firebase.auth.FirebaseAuth
 import co.yml.charts.axis.AxisData
-import co.yml.charts.common.model.Point
 import co.yml.charts.ui.linechart.LineChart
 import co.yml.charts.ui.linechart.model.GridLines
 import co.yml.charts.ui.linechart.model.IntersectionPoint
@@ -61,16 +61,13 @@ import co.yml.charts.ui.linechart.model.LineType
 import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
 import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
 import co.yml.charts.ui.linechart.model.ShadowUnderLine
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.util.Locale
-
 
 @Serializable
 object Profile
 
 @Composable
-fun ProfilePage() {
+fun ProfilePage(navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize(),
@@ -84,7 +81,7 @@ fun ProfilePage() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                profile()
+                profile(navController)
                 recommendation()
                 plan()
                 achievement()
@@ -93,11 +90,10 @@ fun ProfilePage() {
             }
         }
     }
-
 }
 
 @Composable
-fun profile() {
+fun profile(navController: NavController) {
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -120,9 +116,7 @@ fun profile() {
                     contentScale = ContentScale.Crop
                 )
             }
-            Button(onClick = {
-
-            }) {
+            Button(onClick = {}) {
                 Text("Edit")
             }
         }
@@ -134,7 +128,6 @@ fun profile() {
             content = {
 
                 Row(
-//                    modifier = Modifier.padding(16.dp).clip(RoundedCornerShape(10.dp)),
                     horizontalArrangement = Arrangement.spacedBy(32.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -151,10 +144,24 @@ fun profile() {
             }
         )
     }
+
+    // Logout Button
+    Button(
+        onClick = {
+            FirebaseAuth.getInstance().signOut()
+            navController.navigate("loginPage") {
+                popUpTo(0) { inclusive = true }
+            }
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+        modifier = Modifier.padding(top = 16.dp)
+    ) {
+        Text(text = "Logout", color = Color.White)
+    }
 }
 
 @Composable
-fun title(str:String, imageResId:Int) {
+fun title(str: String, imageResId: Int) {
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -168,7 +175,7 @@ fun title(str:String, imageResId:Int) {
         )
         Icon(
             bitmap = ImageBitmap.imageResource(id = imageResId),
-            contentDescription="",
+            contentDescription = "",
             modifier = Modifier
                 .size(30.dp)
         )
@@ -245,93 +252,13 @@ fun CardBox(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-//            .height(120.dp)
             .shadow(4.dp, RoundedCornerShape(20.dp))
             .background(Color(0xFFD9C2EC), RoundedCornerShape(20.dp))
-            .padding(16.dp),
-//        contentAlignment = Alignment.CenterStart
+            .padding(16.dp)
     ) {
         content()
     }
 }
-
-@Composable
-fun EditProfilePage() {
-
-}
-
-//@Composable
-//fun LineChartScreen() {
-//    val steps = 5
-//    val pointsData = listOf(
-//        Point(0f,40f),
-//        Point(1f,90f),
-//        Point(2f,0f),
-//        Point(3f,60f),
-//        Point(4f,10f),
-//    )
-//
-//    val xAxisData = AxisData.Builder()
-//        .axisStepSize(100.dp)
-//        .backgroundColor(Color.Transparent)
-//        .steps(pointsData.size - 1)
-//        .labelData { i -> i.toString() }
-//        .labelAndAxisLinePadding(15.dp)
-//        .axisLineColor(MaterialTheme.colorScheme.tertiary)
-//        .axisLabelColor(MaterialTheme.colorScheme.tertiary)
-//        .build()
-//
-//    val yAxisData = AxisData.Builder()
-//        .steps(steps)
-//        .backgroundColor(Color.Transparent)
-//        .labelAndAxisLinePadding(20.dp)
-//        .labelData { i ->
-//            val yScale = 100/steps
-//            (i*yScale).toString()
-//        }
-//        .axisLineColor(MaterialTheme.colorScheme.tertiary)
-//        .axisLabelColor(MaterialTheme.colorScheme.tertiary)
-//        .build()
-//
-//    val lineChartData = LineChartData(
-//        linePlotData = LinePlotData(
-//            lines = listOf(
-//                Line(
-//                    dataPoints = pointsData,
-//                    LineStyle(
-//                        color = MaterialTheme.colorScheme.tertiary,
-//                        lineType = LineType.Straight(isDotted = false)
-//                    ),
-//                    IntersectionPoint(
-//                        color = MaterialTheme.colorScheme.tertiary
-//                    ),
-//                    SelectionHighlightPoint(color = MaterialTheme.colorScheme.primary),
-//                    ShadowUnderLine(
-//                        alpha = 0.5f,
-//                        brush = Brush.verticalGradient(
-//                            colors = listOf(
-//                                MaterialTheme.colorScheme.inversePrimary,
-//                                Color.Transparent
-//                            )
-//                        )
-//                    ),
-//                    SelectionHighlightPopUp()
-//                )
-//            ),
-//        ),
-//        backgroundColor = MaterialTheme.colorScheme.surface,
-//        xAxisData = xAxisData,
-//        yAxisData = yAxisData,
-//        gridLines = GridLines(color = MaterialTheme.colorScheme.outlineVariant)
-//    )
-//
-//    LineChart(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(400.dp),
-//        lineChartData=lineChartData
-//    )
-//}
 
 @Composable
 fun LineChartScreen() {

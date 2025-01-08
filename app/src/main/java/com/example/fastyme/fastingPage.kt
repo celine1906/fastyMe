@@ -1,8 +1,12 @@
 package com.example.fastyme
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,16 +19,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.serialization.Serializable
-
-@Serializable
-object Fasting
+import androidx.navigation.NavController
 
 @Composable
-fun FastingPage() {
-    // Halaman Scrollable
+fun FastingPage(navController: NavController) {
+
+    // Section untuk tiap jenis fasting
     @Composable
-    fun FastingSection(imageResId: Int, title: String, description: String) {
+    fun FastingSection(imageResId: Int, title: String, description: String, fastingId: String) {
         Box(
             modifier = Modifier
                 .padding(horizontal = 26.dp, vertical = 15.dp)
@@ -34,6 +36,10 @@ fun FastingPage() {
                 .background(
                     color = Color.Gray.copy(alpha = 0.1f)  // Latar belakang transparansi
                 )
+                .clickable {
+                    // Navigasi ke halaman detail fasting dengan ID dari Firestore
+                    navController.navigate("$FASTING_DETAIL_ROUTE/$fastingId")
+                }
         ) {
             // Gambar sebagai background
             Image(
@@ -88,49 +94,34 @@ fun FastingPage() {
             .background(Color.White)
             .verticalScroll(rememberScrollState()) // Bikin scrollable
     ) {
-        // Header atau Judul Halaman
-        Text(
-            text = "Fasting Type",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxWidth()  // Menyesuaikan lebar agar teks di tengah
-                .padding(top = 32.dp, bottom = 18.dp),  // Menambahkan padding atas (top) untuk menurunkan teks
-            textAlign = TextAlign.Center // Teks di tengah horizontal
-        )
-
-        // Divider antara header dan section
-        HorizontalDivider(
-            modifier = Modifier
-                .fillMaxWidth() // Divider memenuhi lebar layar
-                .padding(horizontal = 16.dp), // Hilangkan padding horizontal
-            thickness = 1.dp, // Ketebalan divider
-            color = Color.Gray.copy(alpha = 0.5f) // Warna divider
-        )
 
         // Section dengan Background Gambar
         FastingSection(
             imageResId = R.drawable.fasiting_image1,
             title = "Leangains Protocol (16/8)",
-            description = "Fleksibel, efektif, sederhana, dan teratur"
+            description = "Fleksibel, efektif, sederhana, dan teratur",
+            fastingId = "leangains_protocol_16_8"
         )
 
         FastingSection(
             imageResId = R.drawable.fasiting_image1,
             title = "Warrior Diet (20/4)",
-            description = "Puasa panjang diiringi makan besar"
+            description = "Puasa panjang diiringi makan besar",
+            fastingId = "warrior_diet_20_4"
         )
 
         FastingSection(
             imageResId = R.drawable.fasiting_image1,
             title = "Eat Stop Eat",
-            description = "Puasa 24 jam seminggu sekali"
+            description = "Puasa 24 jam seminggu sekali",
+            fastingId = "eat_stop_eat"
         )
 
         FastingSection(
             imageResId = R.drawable.fasiting_image1,
             title = "OMAD (One Meal A Day)",
-            description = "Hanya makan sekali sehari"
+            description = "Hanya makan sekali sehari",
+            fastingId = "omad_one_meal_a_day"
         )
     }
 }

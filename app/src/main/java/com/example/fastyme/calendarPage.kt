@@ -3,7 +3,10 @@ package com.example.fastyme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -12,44 +15,42 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
-
-
-@OptIn(ExperimentalMaterial3Api::class)
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 @Composable
-fun CalendarPage() {
+fun CalendarPage(navController: NavController) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 8.dp) // Mengurangi padding agar kalender lebih lebar
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally // Pusatkan elemen dalam kolom
     ) {
-        // Header Kalender
+
         CalendarHeader { newMonth, newYear ->
             selectedDate = LocalDate.of(newYear, newMonth, selectedDate?.dayOfMonth ?: 1)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Kalender Utama
         CalendarGrid(selectedDate) { newDate ->
             selectedDate = newDate
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Informasi Tanggal yang Dipilih
         selectedDate?.let {
             Card(
                 modifier = Modifier
@@ -58,33 +59,34 @@ fun CalendarPage() {
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = "${it.dayOfWeek.name}, ${it.dayOfMonth} ${it.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${it.year}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF673AB7)
+                        color = Color(0xFF673AB7),
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Type of Fasting: OMAD",
                         fontSize = 14.sp,
-                        color = Color.Black
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         text = "Time: 12 Hours",
                         fontSize = 14.sp,
-                        color = Color.Black
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         }
 
-        // Bagian "Goal Accomplished"
-        GoalAccomplishedSection()
+        GoalAccomplishedSection(navController)
     }
 }
 
@@ -100,7 +102,7 @@ fun CalendarHeader(onMonthChange: (Int, Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -119,8 +121,7 @@ fun CalendarHeader(onMonthChange: (Int, Int) -> Unit) {
         Text(
             text = "$monthName $currentYear",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontWeight = FontWeight.Bold
         )
 
         IconButton(onClick = {
@@ -147,35 +148,35 @@ fun CalendarGrid(
     val currentYear = selectedDate?.year ?: today.year
 
     val daysInMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
-    val firstDayOfWeek = LocalDate.of(currentYear, currentMonth, 1).dayOfWeek.value % 7 // 0 untuk Minggu
+    val firstDayOfWeek = LocalDate.of(currentYear, currentMonth, 1).dayOfWeek.value % 7
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp) // Mengurangi padding untuk membuat grid lebih lebar
     ) {
-        // Baris untuk nama hari
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceEvenly // Atur jarak secara proporsional
         ) {
             listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
                 Text(
                     text = day,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f) // Pastikan semua elemen mendapatkan lebar sama
                 )
             }
         }
 
-        // Grid tanggal
         val totalCells = daysInMonth + firstDayOfWeek
         val rows = (totalCells / 7) + if (totalCells % 7 != 0) 1 else 0
 
         for (row in 0 until rows) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceEvenly // Elemen dalam setiap baris diratakan
             ) {
                 for (col in 0..6) {
                     val cellIndex = row * 7 + col
@@ -187,7 +188,7 @@ fun CalendarGrid(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .padding(4.dp)
+                            .padding(2.dp) // Sesuaikan padding untuk memperlebar grid
                             .background(
                                 color = if (date != null && selectedDate?.dayOfMonth == date) Color(0xFFBB86FC)
                                 else Color.Transparent,
@@ -204,7 +205,8 @@ fun CalendarGrid(
                             text = date?.toString() ?: "",
                             fontSize = 14.sp,
                             color = if (date != null && LocalDate.of(currentYear, currentMonth, date) == today) Color.Red
-                            else Color.Black
+                            else Color.Black,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -213,63 +215,53 @@ fun CalendarGrid(
     }
 }
 
-
-
 @Composable
-fun GoalAccomplishedSection() {
-    Text(
-        text = "Goal Accomplished",
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+fun GoalAccomplishedSection(navController: NavController) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        GoalCard(title = "Water Warrior", iconColor = Color(0xFF2196F3))
-        GoalCard(title = "Time Heroes", iconColor = Color(0xFFFFC107))
-        GoalCard(title = "Recipeess", iconColor = Color(0xFF4CAF50))
+        Text(
+            text = "Start Your Fasting Plan",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+
+        Button(
+            onClick = { navController.navigate(FASTING_PLAN) },
+            colors = ButtonDefaults.buttonColors(Color(0xFF6200EE)),
+            modifier = Modifier
+                .width(100.dp)
+                .height(60.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(
+                text = "+",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+
+            )
+        }
     }
 }
 
 @Composable
-fun GoalCard(title: String, iconColor: Color) {
-    Card(
-        modifier = Modifier
-            .size(150.dp)
-            .padding(8.dp),
-        shape = RectangleShape,
-        colors = CardDefaults.cardColors(containerColor = iconColor.copy(alpha = 0.1f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+fun MyApp() {
+    val navController = rememberNavController()
+    NavHost(navController, startDestination = "calendar") {
+        composable("calendar") { CalendarPage(navController) }
+        composable("plan") {
+            // Implementasi halaman "Plan"
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(iconColor, shape = CircleShape),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = title.first().toString(),
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Plan Page", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = title,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

@@ -61,6 +61,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -128,6 +130,8 @@ fun FastingAppUI(navController: NavController) {
     val lastRunDate = sharedPreferences.getString("last_run_date", null)
     val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
+    val userName = remember { mutableStateOf("User") }
+
     if (lastRunDate != todayDate) {
         if(scheduleState.value.startTime!="") {
             addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, true, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
@@ -136,6 +140,25 @@ fun FastingAppUI(navController: NavController) {
         // Update the last run date
         sharedPreferences.edit().putString("last_run_date", todayDate).apply()
     }
+
+    // ambil nama usernya disini
+    LaunchedEffect(Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        FirebaseFirestore.getInstance()
+            .collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                val name = document.getString("name")
+                if (name != null) {
+                    userName.value = name // Tampilkan nama pengguna
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firebase", "Error fetching user name: ${e.message}")
+            }
+    }
+
 
     // Main background with a purple accent circle timer
     LazyColumn(
@@ -150,12 +173,13 @@ fun FastingAppUI(navController: NavController) {
 
         // Top greeting text
         Text(
-            text = "Halo, (nama user)",
+            text = "Halo, ${userName.value}",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.DarkGray,
             modifier = Modifier.padding(top = 16.dp)
         )
+
 
         Spacer(modifier = Modifier.height(30.dp))
 

@@ -141,10 +141,19 @@ fun RegisterPage(
 
             Button(
                 onClick = {
-                    if (password.value == passwordConfirmation.value) {
-                        authViewModel.register(name.value, email.value, password.value)
-                    } else {
-                        authViewModel._authState.value = AuthState.Error("Passwords do not match")
+                    when {
+                        name.value.isEmpty() || email.value.isEmpty() || password.value.isEmpty() -> {
+                            authViewModel.setAuthStateError("All fields must be filled")
+                        }
+                        password.value != passwordConfirmation.value -> {
+                            authViewModel.setAuthStateError("Passwords do not match")
+                        }
+                        else -> {
+                            authViewModel.register(email.value, password.value, name.value) // Tambahkan name.value di sini
+                            navController.navigate("loginPage") {
+                                popUpTo("registerPage") { inclusive = true }
+                            }
+                        }
                     }
                 },
                 modifier = Modifier

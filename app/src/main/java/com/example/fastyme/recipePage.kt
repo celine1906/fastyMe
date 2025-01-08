@@ -75,18 +75,18 @@ fun Header() {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.fastylogo),
-                contentDescription = "FastyLogo",
-                modifier = Modifier
-                    .height(50.dp),
-                contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.tint(Color.Black)
-            )
+//            Image(
+//                painter = painterResource(id = R.drawable.fastylogo),
+//                contentDescription = "FastyLogo",
+//                modifier = Modifier
+//                    .height(50.dp),
+//                contentScale = ContentScale.Crop,
+//                colorFilter = ColorFilter.tint(Color.Black)
+//            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Specially tailored for your fasting success",
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )

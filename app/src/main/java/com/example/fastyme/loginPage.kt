@@ -1,16 +1,14 @@
 package com.example.fastyme
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,11 +20,38 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun LoginPage(modifier: Modifier, navController: NavHostController, authViewModel: AuthViewModel) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
+
+    // Observasi status otentikasi
+    val authState = authViewModel.authState.observeAsState()
+
+    LaunchedEffect(authState.value) {
+        when(authState.value) {
+            is AuthState.Authenticated -> {
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            is AuthState.Error -> {
+                Toast.makeText(
+                    context,
+                    (authState.value as AuthState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            else -> Unit
+        }
+    }
+
     Scaffold {
         Column(
             modifier = Modifier
@@ -57,12 +82,9 @@ fun LoginPage(modifier: Modifier, navController: NavHostController, authViewMode
             Spacer(modifier = Modifier.height(30.dp))
 
             // Email Field
-            val email = remember {
-                mutableStateOf("")
-            }
             TextField(
-                value = email.value,
-                onValueChange = { email.value = it },
+                value = email,
+                onValueChange = { email = it },
                 label = { Text("Email") },
                 modifier = Modifier.width(300.dp).fillMaxWidth(),
                 colors = TextFieldDefaults.textFieldColors(
@@ -76,24 +98,9 @@ fun LoginPage(modifier: Modifier, navController: NavHostController, authViewMode
             Spacer(modifier = Modifier.height(25.dp))
 
             // Password Field
-            val password = remember {
-                mutableStateOf("")
-            }
-
-//            val authState = authViewModel.authState.observeAsState()
-//            val context = LocalContext.current
-//
-//            LaunchedEffect(authState.value) {
-//                when(authState.value){
-//                    is AuthState.Authenticated -> navController.navigate("homepage")
-//                    is AuthState.Error -> Toast.makeText(context,
-//                        (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT).show()
-//                    else -> Unit
-//                }
-//            }
             TextField(
-                value = password.value,
-                onValueChange = { password.value = it },
+                value = password,
+                onValueChange = { password = it },
                 label = { Text("Password") },
                 modifier = Modifier.width(300.dp).fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
@@ -107,9 +114,15 @@ fun LoginPage(modifier: Modifier, navController: NavHostController, authViewMode
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // Register Button
+            // Login Button
             Button(
-                onClick = {  },
+                onClick = {
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        authViewModel.login(email, password)
+                    } else {
+                        Toast.makeText(context, "Please enter both email and password", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier
                     .width(300.dp)
                     .fillMaxWidth()
@@ -121,30 +134,17 @@ fun LoginPage(modifier: Modifier, navController: NavHostController, authViewMode
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Login Using Google
-            OutlinedButton(
-                onClick = { /* Handle Login with Google */ },
-                modifier = Modifier
-                    .width(300.dp)
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Text(text = "Login using Google", fontSize = 16.sp)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Already Have Account
+            // Register Button
             Row(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Don't have account yet? ")
+                Text(text = "Don't have an account? ")
                 Text(
                     text = "Register", fontWeight = FontWeight.Bold,
                     color = Color(0xFF6200EE),
                     modifier = Modifier.clickable {
-                        navController.navigate("registerPage")
+                        navController.navigate("registerPage") // Ganti dengan rute halaman registrasi
                     }
                 )
             }
