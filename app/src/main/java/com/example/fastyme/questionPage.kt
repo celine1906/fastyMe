@@ -1267,7 +1267,7 @@ fun GeminiRecommendation(userId: String) {
         fetchAnswers(userId) { answers ->
             val generativeModel = GenerativeModel(
                 modelName = "gemini-1.5-flash",
-                apiKey = "AIzaSyDwB6k3evHG36PnSrudmTgcsf601j4WRxk"
+                apiKey = "AIzaSyBqK46pVY1OzQkdbKiW39kBVKYfuTc1yiU"
             )
 
             val prompt = """
