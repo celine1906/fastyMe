@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.fastyme"
-        minSdk = 34
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -93,4 +93,5 @@ dependencies {
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("co.yml:ycharts:2.1.0")
 }

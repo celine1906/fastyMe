@@ -533,6 +533,12 @@ fun FastingAppUI(navController: NavController) {
                 }
                 reminderColor.value = Color(0xFF74C1D6)
                 reminderIcon.value = R.drawable.golden_bell
+
+                if(remainingTimeStart==0L && !fastingState.value.isFasting) {
+                    reminderMessage.value = "Based on the schedule you are on your fasting period. Start fasting now!"
+                    reminderColor.value = Color(0xFFE06641)
+                    reminderIcon.value = R.drawable.warning_sign
+                }
             }
             LaunchedEffect(scheduleState.value.isWaiting) {
                 Log.d("Debug", "LaunchedEffect for waiting state: isWaiting=${scheduleState.value.isWaiting}")
