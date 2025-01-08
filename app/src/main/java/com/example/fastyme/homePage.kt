@@ -1,6 +1,7 @@
 package com.example.fastyme
 
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -74,6 +75,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -81,6 +83,7 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 import java.util.Calendar
+import java.util.Date
 
 
 @Serializable
@@ -93,6 +96,8 @@ fun FastingAppUI(navController: NavController) {
     val scheduleState = remember { mutableStateOf(fastingSchedule("",0,"",false, 0,0,"")) }
     fetchDataFastingSchedule(scheduleState)
     var remainingTime by remember { mutableStateOf(0L) } // waktu tersisa
+    var remainingTimeStart by remember { mutableStateOf(0L) }
+    var remainingTimeEnd by remember { mutableStateOf(0L) }
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     var showWarning by remember { mutableStateOf(false) }
@@ -118,6 +123,20 @@ fun FastingAppUI(navController: NavController) {
             DateTimeFormatter.ofPattern("hh:mm a").format(stopTime)
         }
     }
+
+    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    val lastRunDate = sharedPreferences.getString("last_run_date", null)
+    val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+    if (lastRunDate != todayDate) {
+        if(scheduleState.value.startTime!="") {
+            addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, true, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
+        }
+
+        // Update the last run date
+        sharedPreferences.edit().putString("last_run_date", todayDate).apply()
+    }
+
     // Main background with a purple accent circle timer
     LazyColumn(
         modifier = Modifier
@@ -388,8 +407,11 @@ fun FastingAppUI(navController: NavController) {
             dialogState = timeDialogState,
             buttons = {
                 positiveButton(text="OK") {
-                    val timeMillis = System.currentTimeMillis()
-                    val endTime = System.currentTimeMillis() + currentTime * 1000
+                    val currentDate = LocalDate.now() // Ambil tanggal saat ini
+                    val localDateTime = LocalDateTime.of(currentDate, pickedTime) // Gabungkan tanggal dan pickedTime menjadi LocalDateTime
+                    val timeMillis = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() // Konversi ke milis
+
+                    val endTime = timeMillis + currentTime * 1000
                     if(scheduleState.value.isWaiting) {
                         showWarning=true
                     } else {
@@ -449,8 +471,11 @@ fun FastingAppUI(navController: NavController) {
                             }
                             Button(
                                 onClick = {
-                                    val timeMillis = System.currentTimeMillis()
-                                    val endTime = System.currentTimeMillis() + currentTime * 1000
+                                    val currentDate = LocalDate.now() // Ambil tanggal saat ini
+                                    val localDateTime = LocalDateTime.of(currentDate, pickedTime) // Gabungkan tanggal dan pickedTime menjadi LocalDateTime
+                                    val timeMillis = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() // Konversi ke milis
+
+                                    val endTime = timeMillis + currentTime * 1000
                                     addFastingSchedule(formattedTime, valueSelected, formattedStopTime, true, timeMillis, endTime, todayString)
                                     fetchDataFastingSchedule(scheduleState)
                                     showWarning=false
@@ -468,9 +493,130 @@ fun FastingAppUI(navController: NavController) {
                 }
             }
 
+            val reminderMessage = remember { mutableStateOf("Initial message") }
+            val reminderColor = remember { mutableStateOf(Color.White) }
+            val reminderIcon = remember { mutableStateOf(R.drawable.edit) }
+
+            LaunchedEffect(fastingState.value.isFasting, scheduleState.value.isWaiting) {
+                Log.d("Debug", "LaunchedEffect for not fasting and not scheduled: isFasting=${fastingState.value.isFasting}, isWaiting=${scheduleState.value.isWaiting}")
+                if (!fastingState.value.isFasting && !scheduleState.value.isWaiting) {
+                    reminderMessage.value = "You haven't started or scheduled a fast for today. Plan your fasting schedule to stay on track with your goals!"
+                    reminderColor.value = Color(0xFFF838C39)
+                    reminderIcon.value = R.drawable.edit
+                }
+            }
+
+            // LaunchedEffect untuk kondisi fasting
+            LaunchedEffect(fastingState.value.isFasting, remainingTime) {
+                if (fastingState.value.isFasting) {
+                    if (remainingTime > 3600000L) {
+                        reminderMessage.value = "You have ${remainingTime / 3600000L} hours left in your fasting period. Stay strong!"
+                        reminderColor.value = Color(0xFFFBC638)
+                        reminderIcon.value = R.drawable.alarm_clock
+                    } else {
+                        reminderMessage.value = "Fasting ends soon! Plan your meal to break the fast."
+                        reminderColor.value = Color(0xFFACB864)
+                        reminderIcon.value = R.drawable.plan_meal
+                    }
+                }
+            }
+
+            // Function to update reminder message
+            fun updateReminderMessage(remainingTimeStart: Long, startTime: String) {
+                val hoursLeft = remainingTimeStart / 3600000L
+                val minutesLeft = (remainingTimeStart % 3600000L) / 60000L
+
+                reminderMessage.value = when {
+                    hoursLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $hoursLeft hour(s) and $minutesLeft minute(s)!"
+                    minutesLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $minutesLeft minute(s)!"
+                    else -> "Your fasting is scheduled at $startTime. Get ready as the fasting period is about to begin!"
+                }
+                reminderColor.value = Color(0xFF74C1D6)
+                reminderIcon.value = R.drawable.golden_bell
+            }
+            LaunchedEffect(scheduleState.value.isWaiting) {
+                Log.d("Debug", "LaunchedEffect for waiting state: isWaiting=${scheduleState.value.isWaiting}")
+                if (!fastingState.value.isFasting && scheduleState.value.isWaiting) {
+                    var remainingTimeStart = maxOf(scheduleState.value.startTimeLong - System.currentTimeMillis(), 0L)
+                    var remainingTimeEnd = maxOf(scheduleState.value.endTimeLong - System.currentTimeMillis(), 0L)
+
+                    // Update UI immediately with initial state
+                    updateReminderMessage(remainingTimeStart, scheduleState.value.startTime)
+
+                    while (remainingTimeEnd > 0) {
+                        delay(1000L)
+                        remainingTimeStart = maxOf(scheduleState.value.startTimeLong - System.currentTimeMillis(), 0L)
+                        remainingTimeEnd = maxOf(scheduleState.value.endTimeLong - System.currentTimeMillis(), 0L)
+                        Log.d("Debug", "remainingTimeStart: $remainingTimeStart, remainingTimeEnd: $remainingTimeEnd")
+
+                        // Update UI as time counts down
+                        updateReminderMessage(remainingTimeStart, scheduleState.value.startTime)
+                    }
+
+                    if (remainingTimeEnd == 0L) {
+                        addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, false, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
+                        fetchDataFastingSchedule(scheduleState)
+                    }
+                }
+            }
 
 
-        ReminderBox()
+
+
+//            LaunchedEffect(fastingState.value.isFasting, scheduleState.value.isWaiting, scheduleState.value.startTimeLong, remainingTime, scheduleState.value.endTimeLong) {
+//                if (!fastingState.value.isFasting && !scheduleState.value.isWaiting) {
+//                    reminderMessage.value = "You haven't started or scheduled a fast for today. Plan your fasting schedule to stay on track with your goals!"
+//                    reminderColor.value = Color(0xFFF838C39)
+//                    reminderIcon.value = R.drawable.edit
+//                } else if (fastingState.value.isFasting) {
+//                    if (remainingTime > 3600000L) {
+//                        reminderMessage.value = "You have ${remainingTime / 3600000L} hours left in your fasting period. Stay strong!"
+//                        reminderColor.value = Color(0xFFFBC638)
+//                        reminderIcon.value = R.drawable.alarm_clock
+//                    } else {
+//                        reminderMessage.value = "Fasting ends soon! Plan your meal to break the fast."
+//                        reminderColor.value = Color(0xFFACB864)
+//                        reminderIcon.value = R.drawable.plan_meal
+//                    }
+//                } else if (!fastingState.value.isFasting && scheduleState.value.isWaiting) {
+//                    if (scheduleState.value.startTimeLong > 0 && scheduleState.value.endTimeLong > 0) {
+//                    while (remainingTimeEnd > 0) {
+////                        val currentTime = System.currentTimeMillis()
+//                        delay(1000L) // Delay for 1 second
+//                        remainingTimeStart = maxOf(scheduleState.value.startTimeLong - System.currentTimeMillis(), 0L)
+//                        remainingTimeEnd = maxOf(scheduleState.value.endTimeLong - System.currentTimeMillis(), 0L)
+//                        Log.d("Debug", "remainingTimeStart: $remainingTimeStart, remainingTimeEnd: $remainingTimeEnd")
+//                    }
+//                        val hoursLeft = remainingTimeStart / 3600000L
+//                        val minutesLeft = (remainingTimeStart % 3600000L) / 60000L
+//
+//                        when {
+//                            hoursLeft > 0 -> {
+//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period will begin in $hoursLeft hour(s) and $minutesLeft minute(s)!"
+//                            }
+//                            minutesLeft > 0 -> {
+//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period will begin in $minutesLeft minute(s)!"
+//                            }
+//                            else -> {
+//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period is about to begin!"
+//                            }
+//                        }
+//
+//                        reminderColor.value = Color(0xFF74C1D6)
+//                        reminderIcon.value = R.drawable.golden_bell
+//
+//
+//
+//                    if(remainingTimeEnd==0L) {
+//                        addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, false, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
+//                        fetchDataFastingSchedule(scheduleState)
+//                    }
+//                    }
+//                }
+//            }
+
+            ReminderBox(reminderMessage.value, reminderColor.value, reminderIcon.value)
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -565,22 +711,25 @@ fun TimeOption(label: String, time: String) {
 }
 
 @Composable
-fun ReminderBox() {
+fun ReminderBox(text:String, color:Color, image:Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(30.dp))
-            .background(Color(0xFF5624C4))
+            .background(color)
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(10.dp)
+        Row(
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "You should start fasting now!", color = Color.White)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(text = "Drink water to fulfill daily intake of water!", color = Color.White)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(text = "Stop eating, you have exceeded your daily calorie limit", color = Color.White)
+            Text(text = "$text", color = Color.Black,
+                modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(id=image),
+                contentDescription = "warning",
+                modifier = Modifier.size(100.dp)
+            )
         }
     }
 }
