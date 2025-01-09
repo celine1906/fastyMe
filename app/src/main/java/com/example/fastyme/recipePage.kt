@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -41,6 +42,9 @@ fun RecipeApp() {
             val recipeTitle = backStackEntry.arguments?.getString("recipeTitle") ?: ""
             DetailRecipePage(navController = navController, recipeTitle = recipeTitle)
         }
+        composable("uploadPhoto") {
+            UploadPhoto()
+        }
     }
 }
 
@@ -51,6 +55,7 @@ fun RecipePage(navController: androidx.navigation.NavController) {
             item {
                 Header()
                 Spacer(modifier = Modifier.height(16.dp))
+                ButtonGenerateRecipe(navController)
                 RecipeCategories(navController)
                 PopularRecipes(navController)
             }
@@ -75,14 +80,6 @@ fun Header() {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            Image(
-//                painter = painterResource(id = R.drawable.fastylogo),
-//                contentDescription = "FastyLogo",
-//                modifier = Modifier
-//                    .height(50.dp),
-//                contentScale = ContentScale.Crop,
-//                colorFilter = ColorFilter.tint(Color.Black)
-//            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Specially tailored for your fasting success",
@@ -91,6 +88,19 @@ fun Header() {
                 color = Color.Black
             )
         }
+    }
+}
+
+@Composable
+fun ButtonGenerateRecipe(navController: NavController) {
+    Button(
+        onClick = {
+            navController.navigate("uploadPhoto")
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+    {
+        Text("Scan Ingredients for Low-Calorie Recipe")
     }
 }
 

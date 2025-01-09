@@ -550,13 +550,17 @@ fun FastingAppUI(navController: NavController) {
                 val hoursLeft = remainingTimeStart / 3600000L
                 val minutesLeft = (remainingTimeStart % 3600000L) / 60000L
 
-                reminderMessage.value = when {
-                    hoursLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $hoursLeft hour(s) and $minutesLeft minute(s)!"
-                    minutesLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $minutesLeft minute(s)!"
-                    else -> "Your fasting is scheduled at $startTime. Get ready as the fasting period is about to begin!"
+                if(!fastingState.value.isFasting && scheduleState.value.isWaiting) {
+                    reminderMessage.value = when {
+                        hoursLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $hoursLeft hour(s) and $minutesLeft minute(s)!"
+                        minutesLeft > 0 -> "Your fasting is scheduled at $startTime. Get ready as the fasting period will begin in $minutesLeft minute(s)!"
+                        else -> "Your fasting is scheduled at $startTime. Get ready as the fasting period is about to begin!"
+                    }
+                    reminderColor.value = Color(0xFF74C1D6)
+                    reminderIcon.value = R.drawable.golden_bell
                 }
-                reminderColor.value = Color(0xFF74C1D6)
-                reminderIcon.value = R.drawable.golden_bell
+
+
 
                 if(remainingTimeStart==0L && !fastingState.value.isFasting) {
                     reminderMessage.value = "Based on the schedule you are on your fasting period. Start fasting now!"
@@ -591,59 +595,6 @@ fun FastingAppUI(navController: NavController) {
             }
 
 
-
-
-//            LaunchedEffect(fastingState.value.isFasting, scheduleState.value.isWaiting, scheduleState.value.startTimeLong, remainingTime, scheduleState.value.endTimeLong) {
-//                if (!fastingState.value.isFasting && !scheduleState.value.isWaiting) {
-//                    reminderMessage.value = "You haven't started or scheduled a fast for today. Plan your fasting schedule to stay on track with your goals!"
-//                    reminderColor.value = Color(0xFFF838C39)
-//                    reminderIcon.value = R.drawable.edit
-//                } else if (fastingState.value.isFasting) {
-//                    if (remainingTime > 3600000L) {
-//                        reminderMessage.value = "You have ${remainingTime / 3600000L} hours left in your fasting period. Stay strong!"
-//                        reminderColor.value = Color(0xFFFBC638)
-//                        reminderIcon.value = R.drawable.alarm_clock
-//                    } else {
-//                        reminderMessage.value = "Fasting ends soon! Plan your meal to break the fast."
-//                        reminderColor.value = Color(0xFFACB864)
-//                        reminderIcon.value = R.drawable.plan_meal
-//                    }
-//                } else if (!fastingState.value.isFasting && scheduleState.value.isWaiting) {
-//                    if (scheduleState.value.startTimeLong > 0 && scheduleState.value.endTimeLong > 0) {
-//                    while (remainingTimeEnd > 0) {
-////                        val currentTime = System.currentTimeMillis()
-//                        delay(1000L) // Delay for 1 second
-//                        remainingTimeStart = maxOf(scheduleState.value.startTimeLong - System.currentTimeMillis(), 0L)
-//                        remainingTimeEnd = maxOf(scheduleState.value.endTimeLong - System.currentTimeMillis(), 0L)
-//                        Log.d("Debug", "remainingTimeStart: $remainingTimeStart, remainingTimeEnd: $remainingTimeEnd")
-//                    }
-//                        val hoursLeft = remainingTimeStart / 3600000L
-//                        val minutesLeft = (remainingTimeStart % 3600000L) / 60000L
-//
-//                        when {
-//                            hoursLeft > 0 -> {
-//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period will begin in $hoursLeft hour(s) and $minutesLeft minute(s)!"
-//                            }
-//                            minutesLeft > 0 -> {
-//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period will begin in $minutesLeft minute(s)!"
-//                            }
-//                            else -> {
-//                                reminderMessage.value = "Your fasting is scheduled at ${scheduleState.value.startTime}. Get ready as the fasting period is about to begin!"
-//                            }
-//                        }
-//
-//                        reminderColor.value = Color(0xFF74C1D6)
-//                        reminderIcon.value = R.drawable.golden_bell
-//
-//
-//
-//                    if(remainingTimeEnd==0L) {
-//                        addFastingSchedule(scheduleState.value.startTime, scheduleState.value.duration, scheduleState.value.endTime, false, scheduleState.value.startTimeLong, scheduleState.value.endTimeLong, scheduleState.value.startDate)
-//                        fetchDataFastingSchedule(scheduleState)
-//                    }
-//                    }
-//                }
-//            }
 
             ReminderBox(reminderMessage.value, reminderColor.value, reminderIcon.value)
 

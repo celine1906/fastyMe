@@ -75,9 +75,8 @@ val todayString = today.format(DateTimeFormatter.ISO_DATE)
 
 @Composable
 fun fetchData() {
-    LaunchedEffect(Unit) {
         db.collection("Water Intake")
-            .document("${AuthViewModel.userId}_$todayString")
+            .document("${userId}_$todayString")
             .addSnapshotListener {
                     snapshot, e ->
                 if (e != null) {
@@ -93,7 +92,6 @@ fun fetchData() {
                     Log.d(TAG, "Current data: null")
                 }
             }
-    }
 }
 
 @Composable
@@ -158,7 +156,7 @@ fun glass(sizes:Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WaterIntake(userId: String, navController: NavController) {
+fun WaterIntake(navController: NavController) {
     var activeButtonIndex by remember { mutableStateOf(-1) }
     var savedValue by remember { mutableStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
@@ -173,7 +171,7 @@ fun WaterIntake(userId: String, navController: NavController) {
             "date" to todayString
         )
         db.collection("Water Intake")
-            .document("${AuthViewModel.userId}_$todayString")
+            .document("${userId}_$todayString")
             .set(data)
             .addOnSuccessListener {
                 Log.d("Firebase", "Data updated successfully")

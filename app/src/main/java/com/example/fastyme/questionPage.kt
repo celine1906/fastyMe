@@ -177,7 +177,7 @@ fun Page1(navController: androidx.navigation.NavHostController, userAnswers: Mut
                 if (selectedOption.value.isNotEmpty()) {
                     // Simpan jawaban ke Firestore menggunakan userId
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId = userId,
                         questionId = "goal",
                         question = "What is your main goal for doing intermittent fasting?",
                         answer = selectedOption.value
@@ -287,7 +287,7 @@ fun Page2 (navController: androidx.navigation.NavHostController, userAnswers: Mu
             onClick = {
                 if (selectedOption.value.isNotEmpty()) {
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId = userId,
                         questionId = "fastingFamiliarity",
                         question = "How familiar are you with fasting?",
                         answer = selectedOption.value
@@ -393,7 +393,7 @@ fun Page3 (navController: androidx.navigation.NavHostController, userAnswers: Mu
             onClick = {
                 if (selectedOption.value.isNotEmpty()) {
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId = userId,
                         questionId = "mealsPerDay",
                         question = "How many meals do you usually eat in a day?",
                         answer = selectedOption.value
@@ -497,7 +497,7 @@ fun Page4 (navController: androidx.navigation.NavHostController, userAnswers: Mu
             onClick = {
                 if (selectedOption.value.isNotEmpty()) {
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId = userId,
                         questionId = "activityLevel",
                         question = "How would you describe your daily lifestyle?",
                         answer = selectedOption.value
@@ -640,7 +640,7 @@ fun Page5(navController: androidx.navigation.NavHostController, userAnswers: Mut
                     if (firstMealTime.value.isNotEmpty() && lastMealTime.value.isNotEmpty()) {
                         val mealtimeAnswer = "First Meal: ${firstMealTime.value}, Last Meal: ${lastMealTime.value}"
                         saveAnswerToFirestore(
-                            userId = AuthViewModel.userId.toString(), // Variabel dari MainActivity
+                            userId = userId, // Variabel dari MainActivity
                             questionId = "mealTime",
                             question = "At what time do you usually have your first and last meal of the day?",
                             answer = mealtimeAnswer
@@ -745,7 +745,7 @@ fun Page6(navController: androidx.navigation.NavHostController, userAnswers: Mut
                 onClick = {
                     if (selectedOption.value.isNotEmpty()) {
                         saveAnswerToFirestore(
-                            userId = AuthViewModel.userId.toString(),
+                            userId = userId,
                             questionId = "dietaryPreference",
                             question = "What is your dietary preference?",
                             answer = selectedOption.value
@@ -850,7 +850,7 @@ fun Page7(navController: androidx.navigation.NavHostController, userAnswers: Mut
                 onClick = {
                     if (selectedOption.value.isNotEmpty()) {
                         saveAnswerToFirestore(
-                            userId = AuthViewModel.userId.toString(),
+                            userId = userId,
                             questionId = "gender",
                             question = "What's your gender?",
                             answer = selectedOption.value
@@ -978,7 +978,7 @@ fun Page8(navController: androidx.navigation.NavHostController, userAnswers: Mut
                 onClick = {
                     if (mDate.value.isNotEmpty()) {
                         saveAnswerToFirestore(
-                            userId = AuthViewModel.userId.toString(),
+                            userId = userId,
                             questionId = "age",
                             question = "When is your birthday?",
                             answer = mDate.value
@@ -1083,7 +1083,7 @@ fun Page9(navController: androidx.navigation.NavHostController, userAnswers: Mut
             onClick = {
                 if (text.isNotEmpty()) {
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId =userId,
                         questionId = "height",
                         question = "What's your height?",
                         answer = text
@@ -1187,7 +1187,7 @@ fun Page10(navController: androidx.navigation.NavHostController, userAnswers: Mu
             onClick = {
                 if (text.isNotEmpty()) {
                     saveAnswerToFirestore(
-                        userId = AuthViewModel.userId.toString(),
+                        userId = userId,
                         questionId = "weight",
                         question = "What's your current weight?",
                         answer = text

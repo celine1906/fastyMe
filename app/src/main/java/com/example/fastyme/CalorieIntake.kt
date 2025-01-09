@@ -263,7 +263,7 @@ fun progressCircle(size:Int, progress:Float) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalorieIntake(userId: String, navController: NavController) {
+fun CalorieIntake(navController: NavController) {
     val calorieState = remember { mutableStateOf(totalCalorie(0,0,0,0,0)) }
     fetchDataCalorie(calorieState)
     val targetCalorie = 2000
@@ -667,10 +667,6 @@ fun DetailCalorieScreen(name: String, navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-//            Text(
-//                "Your breakfast calories are excessive, please reduce your intake at lunch",
-//                fontWeight = FontWeight.Bold
-//            )
             itemsIndexed(listData) {
                     index, d -> Column(
                 modifier = Modifier
