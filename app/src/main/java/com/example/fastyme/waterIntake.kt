@@ -74,7 +74,7 @@ val todayString = today.format(DateTimeFormatter.ISO_DATE)
 
 
 @Composable
-fun fetchData() {
+fun fetchDataWater() {
         db.collection("Water Intake")
             .document("${userId}_$todayString")
             .addSnapshotListener {
@@ -161,6 +161,7 @@ fun WaterIntake(navController: NavController) {
     var savedValue by remember { mutableStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
     var customAmount by remember { mutableStateOf("") }
+    fetchDataWater()
 
 
 
