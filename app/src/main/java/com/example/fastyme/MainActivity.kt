@@ -48,8 +48,8 @@ const val FASTING_PLAN = "fasting_plan"
 const val LOGIN_ROUTE = "loginPage"
 const val REGISTER_ROUTE = "registerPage"
 
-val user = FirebaseAuth.getInstance().currentUser
-val userId = user?.uid ?: "guest"
+//val user = FirebaseAuth.getInstance().currentUser
+//val userId = user?.uid ?: "guest"
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
@@ -234,8 +234,8 @@ class MainActivity : ComponentActivity() {
                         composable(RECIPE_ROUTE) { RecipeApp() }
                         composable(CALENDAR_ROUTE) { CalendarPage(navController) }
                         composable(PROFILE_ROUTE) { ProfilePage(navController) }
-                        composable("waterIntake") { WaterIntake(userId, navController) }
-                        composable("calorie") { CalorieIntake(userId, navController) }
+                        composable("waterIntake") { WaterIntake(AuthViewModel.userId.toString(), navController) }
+                        composable("calorie") { CalorieIntake(AuthViewModel.userId.toString(), navController) }
                         composable("detailCalorie/{mealType}") { backStackEntry ->
                             val mealType = backStackEntry.arguments?.getString("mealType") ?: ""
                             DetailCalorieScreen(name = mealType, navController)

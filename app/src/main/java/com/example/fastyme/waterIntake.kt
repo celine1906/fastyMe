@@ -77,7 +77,7 @@ val todayString = today.format(DateTimeFormatter.ISO_DATE)
 fun fetchData() {
     LaunchedEffect(Unit) {
         db.collection("Water Intake")
-            .document("${userId}_$todayString")
+            .document("${AuthViewModel.userId}_$todayString")
             .addSnapshotListener {
                     snapshot, e ->
                 if (e != null) {
@@ -173,7 +173,7 @@ fun WaterIntake(userId: String, navController: NavController) {
             "date" to todayString
         )
         db.collection("Water Intake")
-            .document("${userId}_$todayString")
+            .document("${AuthViewModel.userId}_$todayString")
             .set(data)
             .addOnSuccessListener {
                 Log.d("Firebase", "Data updated successfully")
@@ -226,7 +226,7 @@ fun WaterIntake(userId: String, navController: NavController) {
             Text(
                 text = adviceText,
                 color = textColor,
-                modifier = Modifier.padding(16.dp),
+//                modifier = Modifier.padding(16.dp),
                 textAlign = TextAlign.Center,
                 fontSize = 20.sp,
             )

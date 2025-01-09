@@ -11,8 +11,13 @@ import com.google.firebase.firestore.SetOptions
 
 class AuthViewModel : ViewModel() {
 
+    companion object {
+        var userId: String? = null
+    }
+
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+
 
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState
@@ -27,6 +32,14 @@ class AuthViewModel : ViewModel() {
         } else {
             _authState.value = AuthState.Authenticated
         }
+    }
+
+    init {
+        userId = getAuthenticatedUserId()
+    }
+
+    private fun getAuthenticatedUserId(): String? {
+        return auth.currentUser?.uid
     }
 
     fun login(email: String, password: String) {
@@ -101,6 +114,7 @@ class AuthViewModel : ViewModel() {
                 Log.e("Firebase", "Error saving user data: ${e.message}")
             }
     }
+
 }
 
 sealed class AuthState {

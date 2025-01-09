@@ -1,5 +1,7 @@
 package com.example.fastyme
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import co.yml.charts.common.model.Point
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,6 +64,7 @@ import co.yml.charts.ui.linechart.model.LineType
 import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
 import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
 import co.yml.charts.ui.linechart.model.ShadowUnderLine
+import com.google.firebase.firestore.FieldPath
 import java.time.LocalDate
 
 @Serializable
@@ -231,8 +235,13 @@ fun achievement() {
 fun calorieIntake() {
     CardBox(
         content = {
-            title("Calorie Intake", R.drawable.calorie_intake)
-            LineChartScreen()
+            Column() {
+
+
+                title("Calorie Intake", R.drawable.calorie_intake)
+//            Spacer(modifier = Modifier.width(16.dp))
+                LineChartScreen("Calorie Intake", "totalCalorieIntake", 2000.toFloat())
+            }
         }
     )
 }
@@ -241,8 +250,12 @@ fun calorieIntake() {
 fun waterIntake() {
     CardBox(
         content = {
-            title("Water Intake", R.drawable.water_intake)
-            LineChartScreen()
+            Column() {
+
+                title("Water Intake", R.drawable.water_intake)
+//            Spacer(modifier = Modifier.height(10.dp))
+                LineChartScreen("Water Intake", "totalWaterIntake", 2100.toFloat())
+            }
         }
     )
 }
@@ -261,7 +274,7 @@ fun CardBox(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun LineChartScreen() {
+fun LineChartScreen(category:String, fieldName: String, limit:Float) {
     val currentMonth = remember { LocalDate.now().monthValue }
     val currentYear = remember { LocalDate.now().year }
     var selectedMonth by remember { mutableStateOf(currentMonth) }
@@ -270,67 +283,47 @@ fun LineChartScreen() {
     var isYearDropdownExpanded by remember { mutableStateOf(false) }
 
     val months = (1..12).toList()
-    val years = (2020..2025).toList()
+    val years = (2024..2025).toList()
 
-    val daysInMonth = LocalDate.of(selectedYear, selectedMonth, 1).lengthOfMonth()
-    val pointsData = (0 until daysInMonth).map { Point(it.toFloat(), (0..100).random().toFloat()) }
+    val pointsData = remember { mutableStateListOf<Point>() }
 
-    // X Axis Data
+    // Fetch data when month or year changes
+    LaunchedEffect(selectedMonth, selectedYear) {
+        fetchDataChart(selectedYear, selectedMonth, pointsData, category, fieldName)
+    }
+
+    val xAxisSteps = if (pointsData.isNotEmpty()) pointsData.size - 1 else 0
+
     val xAxisData = AxisData.Builder()
-        .axisStepSize(100.dp)
+        .axisStepSize(30.dp)
         .backgroundColor(Color.Transparent)
-        .steps(pointsData.size - 1)
+        .steps(xAxisSteps) // Ensure steps are not negative
         .labelData { i -> "${i + 1}" }
         .labelAndAxisLinePadding(15.dp)
         .axisLineColor(MaterialTheme.colorScheme.tertiary)
         .axisLabelColor(MaterialTheme.colorScheme.tertiary)
         .build()
 
-    // Y Axis Data
-    val steps = 5
+    val yAxisSteps = if (pointsData.isNotEmpty()) 5 else 1 // Adjust steps based on data availability
+
+    val maxYValue = pointsData.maxOfOrNull { it.y } ?: 0f
+    val minYValue = pointsData.minOfOrNull { it.y } ?: 0f
+    val yScale = if (maxYValue > 0) (maxYValue - minYValue) / yAxisSteps else 0f
+
     val yAxisData = AxisData.Builder()
-        .steps(steps)
+        .steps(yAxisSteps)
         .backgroundColor(Color.Transparent)
-        .labelAndAxisLinePadding(20.dp)
+        .labelAndAxisLinePadding(50.dp)
         .labelData { i ->
-            val yScale = 100 / steps
-            (i * yScale).toString()
+            val yValue = minYValue + i * yScale
+            yValue.toString().substringBefore(".")
         }
         .axisLineColor(MaterialTheme.colorScheme.tertiary)
         .axisLabelColor(MaterialTheme.colorScheme.tertiary)
         .build()
 
-    val lineChartData = LineChartData(
-        linePlotData = LinePlotData(
-            lines = listOf(
-                Line(
-                    dataPoints = pointsData,
-                    LineStyle(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        lineType = LineType.Straight(isDotted = false)
-                    ),
-                    IntersectionPoint(
-                        color = MaterialTheme.colorScheme.tertiary
-                    ),
-                    SelectionHighlightPoint(color = MaterialTheme.colorScheme.primary),
-                    ShadowUnderLine(
-                        alpha = 0.5f,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.inversePrimary,
-                                Color.Transparent
-                            )
-                        )
-                    ),
-                    SelectionHighlightPopUp()
-                )
-            )
-        ),
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        xAxisData = xAxisData,
-        yAxisData = yAxisData,
-        gridLines = GridLines(color = MaterialTheme.colorScheme.outlineVariant)
-    )
+
+
 
     Column {
         Row {
@@ -362,6 +355,7 @@ fun LineChartScreen() {
 
             Spacer(modifier = Modifier.width(16.dp))
 
+
             // Dropdown for selecting year
             Box {
                 Text(
@@ -389,6 +383,45 @@ fun LineChartScreen() {
             }
         }
 
+        val linePlotData = if (pointsData.isNotEmpty()) {
+            LinePlotData(
+                lines = listOf(
+                    Line(
+                        dataPoints = pointsData,
+                        LineStyle(
+                            color = MaterialTheme.colorScheme.tertiary,
+                            lineType = LineType.Straight(isDotted = false)
+                        ),
+                        IntersectionPoint(
+                            color = MaterialTheme.colorScheme.tertiary
+                        ),
+                        SelectionHighlightPoint(color = MaterialTheme.colorScheme.primary),
+                        ShadowUnderLine(
+                            alpha = 0.5f,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.inversePrimary,
+                                    Color.Transparent
+                                )
+                            )
+                        ),
+                        SelectionHighlightPopUp()
+                    )
+                )
+            )
+        } else {
+            LinePlotData(lines = listOf()) // Provide empty lines for no data case
+        }
+
+        val lineChartData = LineChartData(
+            linePlotData = linePlotData,
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            xAxisData = xAxisData,
+            yAxisData = yAxisData,
+            gridLines = GridLines(color = MaterialTheme.colorScheme.outlineVariant)
+        )
+
+
         LineChart(
             modifier = Modifier
                 .fillMaxWidth()
@@ -396,4 +429,52 @@ fun LineChartScreen() {
             lineChartData = lineChartData
         )
     }
+}
+
+
+
+
+fun fetchDataChart(selectedYear: Int, selectedMonth: Int, pointsData: MutableList<Point>, category:String, fieldName:String) {
+    val startDate = LocalDate.of(selectedYear, selectedMonth, 1)
+    val endDate = startDate.withDayOfMonth(startDate.lengthOfMonth())
+
+    val defaultData = mutableMapOf<Int, Float>().apply {
+        for (day in 1..endDate.dayOfMonth) {
+            this[day] = 0f
+        }
+    }
+
+    db.collection("${category}")
+        .whereGreaterThanOrEqualTo(FieldPath.documentId(), "${AuthViewModel.userId}_$selectedYear-${selectedMonth.toString().padStart(2, '0')}-01")
+        .whereLessThanOrEqualTo(FieldPath.documentId(), "${AuthViewModel.userId}_$selectedYear-${selectedMonth.toString().padStart(2, '0')}-${endDate.dayOfMonth.toString().padStart(2, '0')}")
+        .addSnapshotListener { snapshots, e ->
+            if (e != null) {
+                Log.w(TAG, "Listen failed.", e)
+                return@addSnapshotListener
+            }
+
+            pointsData.clear()
+
+            snapshots?.forEach { snapshot ->
+                val documentId = snapshot.id
+                val datePart = documentId.substringAfter("_")
+                val localDate = LocalDate.parse(datePart)
+
+                if (localDate.year == selectedYear && localDate.monthValue == selectedMonth) {
+                    val day = localDate.dayOfMonth
+                    val totalIntake = snapshot.getLong("${fieldName}")?.toFloat() ?: 0f
+                    defaultData[day] = totalIntake
+                }
+            }
+
+            // Convert map to pointsData list
+            defaultData.forEach { (day, totalIntake) ->
+                pointsData.add(Point(day.toFloat(), totalIntake))
+            }
+
+            // Check if pointsData is empty and add a default value
+            if (pointsData.isEmpty()) {
+                pointsData.add(Point(0f, 0f))
+            }
+        }
 }
