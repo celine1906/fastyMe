@@ -94,4 +94,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("co.yml:ycharts:2.1.0")
+    implementation ("androidx.compose.foundation:foundation:1.5.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.30.1")
 }
