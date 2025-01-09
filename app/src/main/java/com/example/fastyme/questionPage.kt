@@ -185,6 +185,7 @@ fun Page1(navController: androidx.navigation.NavHostController, userAnswers: Mut
                     navController.navigate("page2")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
@@ -294,6 +295,7 @@ fun Page2 (navController: androidx.navigation.NavHostController, userAnswers: Mu
                     navController.navigate("page3")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
@@ -399,6 +401,7 @@ fun Page3 (navController: androidx.navigation.NavHostController, userAnswers: Mu
                     navController.navigate("page4")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
@@ -502,6 +505,7 @@ fun Page4 (navController: androidx.navigation.NavHostController, userAnswers: Mu
                     navController.navigate("page5")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
@@ -645,6 +649,7 @@ fun Page5(navController: androidx.navigation.NavHostController, userAnswers: Mut
                         navController.navigate("page6")
                     }
                 },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier
                     .padding(16.dp)
                     .width(222.dp)
@@ -748,6 +753,7 @@ fun Page6(navController: androidx.navigation.NavHostController, userAnswers: Mut
                         navController.navigate("page7")
                     }
                 },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier
                     .padding(16.dp)
                     .width(222.dp)
@@ -852,6 +858,7 @@ fun Page7(navController: androidx.navigation.NavHostController, userAnswers: Mut
                         navController.navigate("page8")
                     }
                 },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier
                     .padding(16.dp)
                     .width(222.dp)
@@ -979,6 +986,7 @@ fun Page8(navController: androidx.navigation.NavHostController, userAnswers: Mut
                         navController.navigate("page9")
                     }
                 },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier
                     .padding(16.dp)
                     .width(222.dp)
@@ -1083,6 +1091,7 @@ fun Page9(navController: androidx.navigation.NavHostController, userAnswers: Mut
                     navController.navigate("page10")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
@@ -1186,6 +1195,7 @@ fun Page10(navController: androidx.navigation.NavHostController, userAnswers: Mu
                     navController.navigate("recommendation")
                 }
             },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
                 .padding(16.dp)
                 .width(222.dp)
