@@ -753,7 +753,7 @@ fun addFastingData(
         "actualEndTime" to actualEndTime
     )
     db.collection("Fasting Data")
-        .document("${AuthViewModel.userId}")
+        .document("${userId}")
         .collection("$todayString")
         .document("$documentId")
         .set(fastingStartDoc)
@@ -796,7 +796,7 @@ fun saveFastingData(
 
     for (day in lastWeekDates) {
         db.collection("Fasting Data")
-            .document(AuthViewModel.userId.toString())
+            .document(userId.toString())
             .collection(day)
             .whereEqualTo("isFasting", true)
             .get()
@@ -846,7 +846,7 @@ fun fetchDataFasting(fastingState: MutableState<fastingData>, startTime: String)
 
     for (day in lastWeekDates) {
         db.collection("Fasting Data")
-            .document(AuthViewModel.userId.toString())
+            .document(userId.toString())
             .collection(day)
             .get()
             .addOnSuccessListener { documents ->
@@ -923,7 +923,7 @@ fun addFastingSchedule(
         "endTimeLong" to endTimeLong
     )
     db.collection("Fasting Schedule")
-        .document("${AuthViewModel.userId}")
+        .document("${userId}")
         .collection("Dates")
         .document("$todayString")
         .set(fastingStartDoc)
@@ -937,7 +937,7 @@ fun addFastingSchedule(
 
 fun fetchDataFastingSchedule(fastingState: MutableState<fastingSchedule>) {
         db.collection("Fasting Schedule")
-            .document("${AuthViewModel.userId}")
+            .document("${userId}")
             .collection("Dates")
             .document("$todayString")
             .get()

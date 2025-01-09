@@ -56,6 +56,7 @@ import com.example.fastyme.fillPercentage
 import com.example.fastyme.targetIntake
 import com.example.fastyme.todayString
 import com.example.fastyme.totalIntake
+import com.example.fastyme.userId
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.generationConfig
 import com.google.firebase.firestore.SetOptions
@@ -130,7 +131,7 @@ fun updateDatabaseCalorie(jsonObject: JsonObject, type:String, inputValue:String
             )
 
             db.collection("Calorie Intake")
-                .document("${AuthViewModel.userId}_$todayString")
+                .document("${userId}_$todayString")
                 .collection("${type}")
                 .add(firebaseData)
                 .addOnSuccessListener {
@@ -158,7 +159,7 @@ fun updateDatabaseIntakeCalorie(total: Int, totalB:Int, totalL:Int, totalD:Int, 
         "totalCalorieIntake" to total,
     )
     db.collection("Calorie Intake")
-        .document("${AuthViewModel.userId}_$todayString")
+        .document("${userId}_$todayString")
         .set(data, merge())
         .addOnSuccessListener {
             Log.d("Firebase", "Data updated successfully")
@@ -181,7 +182,7 @@ data class totalCalorie (
 fun fetchDataCalorie(calorieState: MutableState<totalCalorie>) {
 //    LaunchedEffect(Unit) {
         db.collection("Calorie Intake")
-            .document("${AuthViewModel.userId}_$todayString")
+            .document("${userId}_$todayString")
             .addSnapshotListener {
                     snapshot, e ->
                 if (e != null) {
@@ -218,7 +219,7 @@ data class calorie (
 
 fun retrieveDataCalorie(listData: SnapshotStateList<calorie>, type:String) {
     db.collection("Calorie Intake")
-        .document("${AuthViewModel.userId}_$todayString")
+        .document("${userId}_$todayString")
         .collection("${type}")
         .get()
         .addOnSuccessListener { data ->
