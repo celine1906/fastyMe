@@ -1,5 +1,6 @@
 package com.example.fastyme
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,24 +25,23 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.time.format.DateTimeFormatter
+
 @Composable
 fun CalendarPage(navController: NavController) {
+    val fastingHistory = remember { mutableStateOf(mapOf<LocalDate, Pair<Color, String>>()) }
+    val fastingPlans = remember { mutableStateListOf<FastingPlan>() }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-//    val userId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
-    val fastingHistory = remember { mutableStateOf(mapOf<LocalDate, Color>()) }
-
-    LaunchedEffect(userId) {
-        if (userId.isNotEmpty()) {
-            fetchFastingData(userId) { data ->
-                fastingHistory.value = data
-            }
+    LaunchedEffect(Unit) {
+        fetchFastingScheduleFromFirebase(userId) { schedule ->
+            fastingHistory.value = schedule
+            Log.d("CalendarPage", "Fasting history: $schedule")
         }
     }
-
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column(
         modifier = Modifier
@@ -50,41 +50,61 @@ fun CalendarPage(navController: NavController) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         CalendarHeader { newMonth, newYear ->
             selectedDate = LocalDate.of(newYear, newMonth, selectedDate?.dayOfMonth ?: 1)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Pass fastingHistory to CalendarGrid
-        CalendarGrid(selectedDate, fastingHistory.value) { newDate ->
-            selectedDate = newDate
-        }
+        CalendarGrid(
+            selectedDate = selectedDate,
+            fastingHistory = fastingHistory.value,
+            onDateSelected = { newDate ->
+                selectedDate = newDate
+            }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        selectedDate?.let {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.Center
+        selectedDate?.let { date ->
+            fastingHistory.value[date]?.let { (color, fastingType) ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
                 ) {
-                    Text(
-                        text = "${it.dayOfWeek.name}, ${it.dayOfMonth} ${it.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${it.year}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF673AB7),
-                        textAlign = TextAlign.Center
-                    )
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${date.dayOfWeek.name}, ${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.year}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF673AB7),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Fasting Type: $fastingType",
+                            fontSize = 14.sp,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
+            }?: run {
+                Text(
+                    text = "Tidak ada jadwal puasa untuk tanggal ini.",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         GoalAccomplishedSection(navController)
     }
@@ -138,53 +158,56 @@ fun CalendarHeader(onMonthChange: (Int, Int) -> Unit) {
     }
 }
 
-
-fun fetchFastingData(userId: String, callback: (Map<LocalDate, Color>) -> Unit) {
-//    val db = FirebaseFirestore.getInstance()
-    val dataMap = mutableMapOf<LocalDate, Color>()
+fun fetchFastingScheduleFromFirebase(
+    userId: String,
+    callback: (Map<LocalDate, Pair<Color, String>>) -> Unit
+) {
+    val fastingSchedule = mutableMapOf<LocalDate, Pair<Color, String>>()
     val today = LocalDate.now()
 
-    // Fetch History
-    db.collection("Fasting Data").document(userId).collection("Dates")
+    FirebaseFirestore.getInstance()
+        .collection("FastingPlan")
+        .document(userId)
+        .collection("Dates")
         .get()
         .addOnSuccessListener { documents ->
             for (document in documents) {
-                try {
-                    val dateString = document.id // Format: "yyyy-MM-dd"
-                    val date = LocalDate.parse(dateString)
-                    if (date.isBefore(today)) {
-                        dataMap[date] = Color.Yellow // Past fasting
+                val startTime = document.getString("startTime")
+                val fastingType = document.getString("fastingType") ?: "Unknown"
+                Log.d("Firebase", "Fetched document: $document")
+
+                if (startTime != null) {
+                    try {
+                        // Parsing tanggal
+                        val dateFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM, HH:mm", Locale.getDefault())
+                        val startDate = LocalDate.parse(startTime.split(",")[1].trim(), dateFormatter)
+
+                        // Warna sesuai status
+                        val color = when {
+                            startDate.isBefore(today) -> Color(0xFF6200EE)
+                            startDate.isAfter(today) -> Color.Green
+                            else -> Color.Yellow
+                        }
+
+                        fastingSchedule[startDate] = Pair(color, fastingType)
+                        Log.d("Firebase", "Parsed date: $startDate with type: $fastingType")
+                    } catch (e: Exception) {
+                        Log.e("Firebase", "Error parsing date: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    // Log error
                 }
             }
-
-            // Fetch Future Plan
-            db.collection("Fasting Schedule").document(userId).collection("Dates")
-                .get()
-                .addOnSuccessListener { scheduleDocuments ->
-                    for (scheduleDocument in scheduleDocuments) {
-                        try {
-                            val dateString = scheduleDocument.id // Format: "yyyy-MM-dd"
-                            val date = LocalDate.parse(dateString)
-                            if (date.isAfter(today)) {
-                                dataMap[date] = Color(0xFF6200EE) // Future fasting
-                            }
-                        } catch (e: Exception) {
-                            // Log error
-                        }
-                    }
-
-                    callback(dataMap) // Call callback after both queries complete
-                }
+            callback(fastingSchedule)
+        }
+        .addOnFailureListener { exception ->
+            Log.e("Firebase", "Error fetching fasting schedule: ${exception.message}")
         }
 }
+
 
 @Composable
 fun CalendarGrid(
     selectedDate: LocalDate?,
-    fastingHistory: Map<LocalDate, Color>,
+    fastingHistory: Map<LocalDate, Pair<Color, String>>,
     onDateSelected: (LocalDate) -> Unit
 ) {
     val today = LocalDate.now()
@@ -231,7 +254,10 @@ fun CalendarGrid(
                     val currentDate = date?.let {
                         LocalDate.of(currentYear, currentMonth, it)
                     }
-                    val backgroundColor = fastingHistory[currentDate] ?: Color.Transparent
+
+                    val fastingInfo = fastingHistory[currentDate]
+                    val backgroundColor = fastingInfo?.first ?: Color.Transparent
+                    val fastingType = fastingInfo?.second
 
                     Box(
                         modifier = Modifier
@@ -252,10 +278,17 @@ fun CalendarGrid(
                         Text(
                             text = date?.toString() ?: "",
                             fontSize = 14.sp,
-                            color = if (date != null && LocalDate.of(currentYear, currentMonth, date) == today) Color.Red
-                            else Color.Black,
+                            color = if (date != null && currentDate == today) Color.Red else Color.Black,
                             textAlign = TextAlign.Center
                         )
+                        fastingType?.let {
+                            Text(
+                                text = it,
+                                fontSize = 10.sp,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -279,7 +312,7 @@ fun GoalAccomplishedSection(navController: NavController) {
         )
 
         Button(
-            onClick = { navController.navigate("plan") },
+            onClick = { navController.navigate(FASTING_PLAN) },
             colors = ButtonDefaults.buttonColors(Color(0xFF6200EE)),
             modifier = Modifier
                 .width(100.dp)

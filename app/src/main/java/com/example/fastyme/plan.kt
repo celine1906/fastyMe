@@ -7,7 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,7 +39,7 @@ fun PlanPage(navController: NavController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.navigateUp() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Go Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go Back")
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -74,8 +74,8 @@ fun PlanPage(navController: NavController) {
 
         // Content
         when (selectedTab) {
-            "Daily" -> DailyPlans()
-            "Weekly" -> WeeklyPlans()
+            "Daily" -> DailyPlans(navController)
+            "Weekly" -> WeeklyPlans(navController)
         }
     }
 }
@@ -84,9 +84,12 @@ fun PlanPage(navController: NavController) {
 fun TabButton(title: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .background(if (isSelected) Color(0xFF6200EE) else Color.Transparent, RoundedCornerShape(30))
+            .background(
+                if (isSelected) Color(0xFF6200EE) else Color.Transparent,
+                RoundedCornerShape(30)
+            )
             .height(40.dp)
-            .width(190.dp) // Atur lebar tombol sesuai kebutuhan
+            .width(210.dp) // Adjust width as needed
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -101,39 +104,55 @@ fun TabButton(title: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun DailyPlans() {
-    FastingSection("Basic Fasting", listOf(
-        FastingPlan("12:12", "12h fasting", "12h eating", "Beginner"),
-        FastingPlan("14:10", "14h fasting", "10h eating", null),
-        FastingPlan("15:9", "15h fasting", "9h eating", null),
-        FastingPlan("16:8", "16h fasting", "8h eating", "Popular")
-    ))
+fun DailyPlans(navController: NavController) {
+    FastingSection(
+        title = "Basic Fasting",
+        plans = listOf(
+            FastingPlan("12:12", "12h fasting", "12h eating", "Beginner"),
+            FastingPlan("14:10", "14h fasting", "10h eating", null),
+            FastingPlan("15:9", "15h fasting", "9h eating", null),
+            FastingPlan("16:8", "16h fasting", "8h eating", "Popular")
+        ),
+        navController = navController
+    )
 
-    FastingSection("Advance Fasting", listOf(
-        FastingPlan("17:7", "17h fasting", "7h eating", null),
-        FastingPlan("18:6", "18h fasting", "6h eating", null),
-        FastingPlan("19:5", "19h fasting", "5h eating", null),
-        FastingPlan("20:4", "20h fasting", "4h eating", "Popular")
-    ))
+    FastingSection(
+        title = "Advance Fasting",
+        plans = listOf(
+            FastingPlan("17:7", "17h fasting", "7h eating", null),
+            FastingPlan("18:6", "18h fasting", "6h eating", null),
+            FastingPlan("19:5", "19h fasting", "5h eating", null),
+            FastingPlan("20:4", "20h fasting", "4h eating", "Popular")
+        ),
+        navController = navController
+    )
 
-    FastingSection("Intermediate Fasting", listOf(
-        FastingPlan("21:3", "21h fasting", "3h eating", null),
-        FastingPlan("22:2", "22h fasting", "2h eating", null),
-        FastingPlan("23:1", "23h fasting", "1h eating", "Popular, OMAD"),
-        FastingPlan("24", "24h fasting", null, null)
-    ))
+    FastingSection(
+        title = "Intermediate Fasting",
+        plans = listOf(
+            FastingPlan("21:3", "21h fasting", "3h eating", null),
+            FastingPlan("22:2", "22h fasting", "2h eating", null),
+            FastingPlan("23:1", "23h fasting", "1h eating", "Popular, OMAD"),
+            FastingPlan("24", "24h fasting", null, null)
+        ),
+        navController = navController
+    )
 }
 
 @Composable
-fun WeeklyPlans() {
-    FastingSection("Weekly Fasting Plans", listOf(
-        FastingPlan("3:1", "3 days fasting", "1 day eating", "Popular"),
-        FastingPlan("5:2", "5 days normal", "2 days fasting", null)
-    ))
+fun WeeklyPlans(navController: NavController) {
+    FastingSection(
+        title = "Weekly Fasting Plans",
+        plans = listOf(
+            FastingPlan("3:1", "3 days fasting", "1 day eating", "Popular"),
+            FastingPlan("5:2", "5 days normal", "2 days fasting", null)
+        ),
+        navController = navController
+    )
 }
 
 @Composable
-fun FastingSection(title: String, plans: List<FastingPlan>) {
+fun FastingSection(title: String, plans: List<FastingPlan>, navController: NavController) {
     Text(
         text = title,
         fontSize = 18.sp,
@@ -143,17 +162,20 @@ fun FastingSection(title: String, plans: List<FastingPlan>) {
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         plans.forEach { plan ->
-            FastingPlanCard(plan)
+            FastingPlanCard(plan = plan, navController = navController)
         }
     }
 }
 
 @Composable
-fun FastingPlanCard(plan: FastingPlan) {
+fun FastingPlanCard(plan: FastingPlan, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable {
+                navController.navigate("planInput/${plan.time}")
+            },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6)),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -180,21 +202,10 @@ fun FastingPlanCard(plan: FastingPlan) {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = plan.fasting,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-                plan.eating?.let {
-                    Text(
-                        text = it,
-                        fontSize = 14.sp,
-                        color = Color.Black
-                    )
-                }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = plan.fasting, fontSize = 14.sp, color = Color.Black)
+                plan.eating?.let { Text(text = it, fontSize = 14.sp, color = Color.Black) }
             }
 
             plan.tag?.let {
