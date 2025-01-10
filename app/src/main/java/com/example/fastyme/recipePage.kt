@@ -26,6 +26,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 
 @Composable
 fun RecipeApp() {
@@ -43,10 +45,18 @@ fun RecipeApp() {
             DetailRecipePage(navController = navController, recipeTitle = recipeTitle)
         }
         composable("uploadPhoto") {
-            UploadPhoto()
+            UploadPhoto(navController)
         }
         composable("savedRecipe") {
-            UploadPhoto()
+            MenuListScreen(navController)
+        }
+        composable("menuDetail/{menuName}") { backStackEntry ->
+            val menuName = backStackEntry.arguments?.getString("menuName") ?: ""
+            MenuDetailScreen(navController, menuName)
+        }
+        composable("geminiResponse/{jsonObject}") { backStackEntry ->
+            // Pass the backStackEntry to ResponseGemini composable
+            ResponseGemini(navController, backStackEntry)
         }
     }
 }
@@ -59,6 +69,7 @@ fun RecipePage(navController: androidx.navigation.NavController) {
                 Header()
                 Spacer(modifier = Modifier.height(16.dp))
                 ButtonGenerateRecipe(navController)
+                ButtonSavedRecipe(navController)
                 RecipeCategories(navController)
                 PopularRecipes(navController)
             }

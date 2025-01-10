@@ -490,6 +490,10 @@ fun FastingAppUI(navController: NavController) {
                                 text = "A fasting schedule already exists for today. Are you sure you want to update it?",
                                 textAlign = TextAlign.Justify,
                             )
+                            Row(
+                                horizontalArrangement = Arrangement.End
+                            ) {
+
                             Button(
                                 onClick = {
                                     showWarning=false
@@ -515,6 +519,7 @@ fun FastingAppUI(navController: NavController) {
                                 }
                             ) {
                                 Text("OK")
+                            }
                             }
                         }
                     }

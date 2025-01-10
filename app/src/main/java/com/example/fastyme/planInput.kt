@@ -286,8 +286,8 @@ fun DateTimePickerDialog(
         shape = RoundedCornerShape(
             topStart = 50.dp, // Top left corner
             topEnd = 50.dp,   // Top right corner
-            bottomStart = 0.dp, // Bottom left corner
-            bottomEnd = 0.dp  // Bottom right corner
+            bottomStart = 50.dp, // Bottom left corner
+            bottomEnd = 50.dp  // Bottom right corner
         ),
         title = {
             Box(
