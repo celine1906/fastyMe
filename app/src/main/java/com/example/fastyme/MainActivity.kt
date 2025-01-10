@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = if (FirebaseAuth.getInstance().currentUser == null) LOGIN_ROUTE else HOME_ROUTE,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding()
                     ) {
                         composable(LOGIN_ROUTE) {
                             val authViewModel: AuthViewModel = viewModel()
