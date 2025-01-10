@@ -36,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.fastyme.ui.theme.FastyMeTheme
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
 const val HOME_ROUTE = "home"
@@ -47,6 +48,7 @@ const val FASTING_DETAIL_ROUTE = "fasting_detail"
 const val FASTING_PLAN = "fasting_plan"
 const val LOGIN_ROUTE = "loginPage"
 const val REGISTER_ROUTE = "registerPage"
+const val FASTING_INPUT = "planInput/{time}"
 
 val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
@@ -161,6 +163,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         WindowCompat.setDecorFitsSystemWindows(window, false) // Opsional jika ingin immersive mode
         actionBar?.hide()
         setContent {
@@ -172,34 +175,6 @@ class MainActivity : ComponentActivity() {
                     .value?.destination?.route
 
                 Scaffold(
-                    topBar = {
-                        // Sembunyikan TopAppBar di halaman login dan register
-                        if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE) {
-                            CenterAlignedTopAppBar(
-                                title = {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 8.dp), // Tambahkan padding untuk menggeser ke bawah
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.logofastyme),
-                                            contentDescription = "Logo FastyMe",
-                                            modifier = Modifier
-                                                .size(100.dp) // Ukuran logo
-                                                .padding(top = 4.dp) // Menggeser logo lebih ke bawah
-                                        )
-                                    }
-                                },
-                                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                    containerColor = Color(0xFF5624C4),
-                                    titleContentColor = Color.White
-                                )
-                            )
-                        }
-                    },
                     bottomBar = {
                         // Sembunyikan BottomNavBar di halaman login dan register
                         if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE) {
@@ -210,7 +185,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = if (FirebaseAuth.getInstance().currentUser == null) LOGIN_ROUTE else HOME_ROUTE,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding()
                     ) {
                         composable(LOGIN_ROUTE) {
                             val authViewModel: AuthViewModel = viewModel()
@@ -248,7 +223,15 @@ class MainActivity : ComponentActivity() {
                             val fastingId = backStackEntry.arguments?.getString("fastingId") ?: ""
                             FastingDetailScreen(navController = navController, fastingId = fastingId)
                         }
+
                         composable(FASTING_PLAN) { PlanPage(navController) }
+                        composable(
+                            route = "planInput/{time}",
+                            arguments = listOf(navArgument("time") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val time = backStackEntry.arguments?.getString("time") ?: "12:12"
+                            PlanInputPage(navController, time)
+                        }
                     }
                 }
             }

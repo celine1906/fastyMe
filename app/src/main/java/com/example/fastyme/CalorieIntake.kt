@@ -265,6 +265,7 @@ fun progressCircle(size:Int, progress:Float) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalorieIntake(navController: NavController) {
+    val isLoading = remember { mutableStateOf(false) }
     val calorieState = remember { mutableStateOf(totalCalorie(0,0,0,0,0)) }
     fetchDataCalorie(calorieState)
     val targetCalorie = 2000
@@ -365,7 +366,7 @@ fun CalorieIntake(navController: NavController) {
                 MealTrackerItem("Lunch", calorieState.value.totalLunch.toInt(), onPlusClick = {
                     if(!fastingState.value.isFasting) {
                         showDialog = true
-                        typeofMeal="Breakfast"
+                        typeofMeal="Lunch"
                     } else{
                         showDialog = false
                         Toast.makeText(context, "You're still fasting!", Toast.LENGTH_SHORT).show()
@@ -374,7 +375,7 @@ fun CalorieIntake(navController: NavController) {
                 MealTrackerItem("Dinner", calorieState.value.totalDinner.toInt(), onPlusClick = {
                     if(!fastingState.value.isFasting) {
                         showDialog = true
-                        typeofMeal="Breakfast"
+                        typeofMeal="Dinner"
                     } else{
                         showDialog = false
                         Toast.makeText(context, "You're still fasting!", Toast.LENGTH_SHORT).show()
@@ -406,8 +407,17 @@ suspend fun modelCall(prompt: String): String {
         "{}" // Kembalikan JSON kosong saat terjadi error
     }
 }
+        if (isLoading.value) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Your existing UI elements here
 
 
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+
+        }
+    }
 
 
 
