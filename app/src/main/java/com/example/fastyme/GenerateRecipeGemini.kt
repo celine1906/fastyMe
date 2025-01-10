@@ -33,17 +33,23 @@ import androidx.compose.ui.unit.sp
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.generationConfig
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import kotlinx.coroutines.*
 import extractJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonObject
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.StringReader
 
 @Composable
 fun UploadPhoto() {
@@ -84,7 +90,7 @@ fun UploadPhoto() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
         Text(
-            text = "Upload an image of your ingredients or take a photo to generate a healthy, low-calorie recipe.",
+            text = "Upload an image or take a photo of your ingredients to generate a healthy, low-calorie recipe.",
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -116,10 +122,15 @@ fun UploadPhoto() {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val responseJson = GeminiRecipeRecommendation(resizedBitmap.asImageBitmap())
-                            val cleanedResponse = cleanJsonResponse(responseJson)
-                            saveResponseToFirestore(cleanedResponse)
+                            if(responseJson!=null) {
+
+
+                            saveResponseToFirestore(responseJson)
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Recipe generated and saved successfully!", Toast.LENGTH_SHORT).show()
+                            }
+                            } else {
+                                Toast.makeText(context, "Failed to generate. Please submit more clear image", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
                             Log.e("GeminiAPI", "Error: ${e.message}")
@@ -146,11 +157,6 @@ fun imageBitmapToByteArray(imageBitmap: ImageBitmap): ByteArray {
 
 fun byteArrayToBase64(byteArray: ByteArray): String {
     return Base64.encodeToString(byteArray, Base64.DEFAULT)
-}
-
-fun cleanJsonResponse(response: String): String {
-    // Menghapus tanda backticks (```) dari respons JSON
-    return response.replace("\n", "").replace("\r", "").replace("```", "")
 }
 
 
@@ -208,66 +214,66 @@ data class DietMenu(
     val carbs: String = "",
     val fiber: String = ""
 )
-
-
 suspend fun saveResponseToFirestore(response: String) {
-    try{
-
-        val jsonObject = extractJsonn(response) // Ensure this is a valid JSON
-        Log.e("JSONOBJECT", "${jsonObject}")
-
+    try {
+        val jsonObject = cleanAndParseJsonResponse(response)
         if (jsonObject != null) {
-//        val menuName = jsonObject.getString("menuName")
-//        val ingredients = jsonObject.getString("ingredients")
-//        val cookingInstructions = jsonObject.getString("cookingInstructions")
-//        val totalCalories = jsonObject.getString("totalCalories")
-//        val fat = jsonObject.getString("fat")
-//        val protein = jsonObject.getString("protein")
-//        val carbs = jsonObject.getString("carbs")
-//        val fiber = jsonObject.getString("fiber")
-
-//        val jsonObject = extractJson(response)
-
-            val menuName = jsonObject.get("menuName") ?: ""
-            val ingredients = jsonObject.get("ingredients")?: ""
-            val cookingInstructions = jsonObject.get("cookingInstructions") ?: ""
-            val totalCalories = jsonObject.get("totalCalories") ?: ""
-            val fat = jsonObject.get("fat") ?: ""
-            val protein = jsonObject.get("protein") ?: ""
-            val carbs = jsonObject.get("carbs") ?: ""
-            val fiber = jsonObject.get("fiber") ?: ""
-    val collectionRef = db.collection("Diet Menus").document(userId.toString()).collection("Saved Menus").document("${menuName}")
+            val menuName = jsonObject.get("menuName")?.asString
+            val ingredients = jsonObject.get("ingredients")?.asString
+            val cookingInstructions = jsonObject.get("cookingInstructions")?.asString
+            val totalCalories = jsonObject.get("totalCalories")?.asString
+            val fat = jsonObject.get("fat")?.asString
+            val protein = jsonObject.get("protein")?.asString
+            val carbs = jsonObject.get("carbs")?.asString
+            val fiber = jsonObject.get("fiber")?.asString
 
 
-    val dietMenu = DietMenu(
-        menuName = menuName.toString(),
-        ingredients = ingredients.toString(),
-        cookingInstructions = cookingInstructions.toString(),
-        totalCalories = totalCalories.toString(),
-        fat = fat.toString(),
-        protein = protein.toString(),
-        carbs = carbs.toString(),
-        fiber = fiber.toString()
-    )
+            val collectionRef = db.collection("Diet Menus").document(userId).collection("Saved Menus").document(menuName.toString())
+            val dietMenu = DietMenu(menuName.toString(), ingredients.toString(), cookingInstructions.toString(), totalCalories.toString(), fat.toString(), protein.toString(), carbs.toString(), fiber.toString())
 
-    collectionRef.set(dietMenu).await()
+            collectionRef.set(dietMenu).await()
         } else {
             Log.e("FirebaseSave", "No valid JSON extracted.")
         }
-} catch (e: JSONException) {
-    Log.e("FirebaseSave", "Invalid JSON format: ${e.message}")
-} catch (e: Exception) {
-    Log.e("FirebaseSave", "Error saving to Firestore: ${e.message}")
-}
+    } catch (e: Exception) {
+        Log.e("FirebaseSave", "Error saving to Firestore: ${e.message}")
+    }
 }
 
 
-fun extractJsonn(response: String): JsonObject? {
+fun cleanAndParseJsonResponse(response: String): JsonObject? {
     return try {
-        // Clean the response to ensure it's properly formatted
-        val cleanedResponse = cleanJsonResponse(response)
-        // Now parse it into a JsonObject
-        Gson().fromJson(cleanedResponse, JsonObject::class.java)
+        // Remove backticks and trim unwanted characters
+        val cleanedResponse = response.trim()
+            .removePrefix("```json")
+            .removeSuffix("```")
+            .replace("\n", " ")
+            .trim() // Memastikan tidak ada spasi tambahan
+
+        val jsonRegex = "\\{.*?\\}".toRegex()
+        val jsonString = jsonRegex.find(cleanedResponse)?.value
+
+        // Jika ada karakter tambahan di akhir JSON, coba hapus whitespace atau karakter yang tidak diperlukan
+//        val cleanedAndTrimmedResponse = cleanedResponse.replace(Regex("\\s+$"), "")
+
+        Log.d("CleanedResponse", cleanedResponse)
+
+
+        // Use GsonBuilder with lenient parsing
+        val gson = GsonBuilder().setLenient().create()
+
+        // Parse the cleaned JSON string to JsonObject using lenient parsing
+        val jsonReader = JsonReader(StringReader(jsonString))
+        jsonReader.isLenient = true  // Enable lenient parsing
+        val jsonObject: JsonObject = gson.fromJson(jsonReader, JsonObject::class.java)
+
+        // Ensure the response is fully consumed
+        if (jsonReader.peek() != JsonToken.END_DOCUMENT) {
+            Log.e("JSONParsing", "Extra characters found after JSON.")
+            return null
+        }
+
+        jsonObject
     } catch (e: JsonSyntaxException) {
         Log.e("JSONParsing", "Error parsing JSON: ${e.message}")
         null

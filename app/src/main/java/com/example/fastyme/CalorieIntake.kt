@@ -679,24 +679,11 @@ fun DetailCalorieScreen(name: String, navController: NavController) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Row {
-                        Box() {
-                            Text("${index+1}.")
-                        }
-                        Text("${d.time}")
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("${d.prompt}")
-                        IconButton(onClick = {
 
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(25.dp))
-                        }
-                    }
+                        Text("${d.time}")
+
+                        Text("${d.prompt}")
+
                     var fatLimit by remember { mutableStateOf(0) }
                     var proteinLimit by remember { mutableStateOf(0) }
                     var carbsLimit by remember { mutableStateOf(0) }
@@ -727,16 +714,7 @@ fun DetailCalorieScreen(name: String, navController: NavController) {
                     ProgressNutrition("Protein", d.protein.toFloat(), proteinLimit, Color(0xFFCB1C35))
                     ProgressNutrition("Carbs", d.carbs.toFloat(), carbsLimit, Color(0xFF5624C4))
                     ProgressNutrition("Fiber", d.fiber.toFloat(), fiberLimit, Color(0xFF307D31))
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
                         Text("Total calories : ${d.totalCalories} kcal")
-                        Button(onClick = {}) {
-                            Text("Delete")
-                        }
-                    }
 
                 }
             }

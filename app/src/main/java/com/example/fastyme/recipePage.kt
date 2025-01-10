@@ -45,6 +45,9 @@ fun RecipeApp() {
         composable("uploadPhoto") {
             UploadPhoto()
         }
+        composable("savedRecipe") {
+            UploadPhoto()
+        }
     }
 }
 
@@ -97,10 +100,23 @@ fun ButtonGenerateRecipe(navController: NavController) {
         onClick = {
             navController.navigate("uploadPhoto")
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().padding(16.dp)
     )
     {
         Text("Scan Ingredients for Low-Calorie Recipe")
+    }
+}
+
+@Composable
+fun ButtonSavedRecipe(navController: NavController) {
+    Button(
+        onClick = {
+            navController.navigate("savedRecipe")
+        },
+        modifier = Modifier.fillMaxWidth().padding(16.dp)
+    )
+    {
+        Text("Saved recipe")
     }
 }
 
@@ -243,169 +259,98 @@ fun getRecipesForCategory(categoryName: String): List<Recipe> {
     return when (categoryName) {
         "Breakfast" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.overnight_oats,
+                title = "Overnight Oats with Chia Seeds",
+                description = "A quick and healthy breakfast option with chia seeds and fresh fruits.",
+                tags = listOf("Fiber Rich", "Low Sugar", "Vegetarian")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.classic_pancakes,
+                title = "Classic Pancakes",
+                description = "Fluffy and delicious pancakes for a great start to your day.",
+                tags = listOf("Sweet", "Comfort Food")
             )
         )
 
         "Main Dishes" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.grilled_lemon_chicken,
+                title = "Grilled Lemon Herb Chicken",
+                description = "Juicy chicken breasts marinated with lemon and herbs, grilled to perfection.",
+                tags = listOf("High Protein", "Low Carb")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.spaghetti_aglio_olio,
+                title = "Spaghetti Aglio e Olio",
+                description = "A simple yet flavorful Italian pasta dish with garlic and olive oil.",
+                tags = listOf("Vegetarian", "Quick Meal")
             )
         )
 
         "Soup & Salads" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.tomato_basil_soup,
+                title = "Tomato Basil Soup",
+                description = "A comforting bowl of fresh tomato soup garnished with basil.",
+                tags = listOf("Low Calorie", "Vegetarian")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.caesar_salad,
+                title = "Caesar Salad",
+                description = "Crisp romaine lettuce with creamy Caesar dressing and croutons.",
+                tags = listOf("Light Meal", "Vegetarian")
             )
         )
 
         "Desserts" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.chocolate_lava_cake,
+                title = "Chocolate Lava Cake",
+                description = "Decadent chocolate cake with a gooey molten center.",
+                tags = listOf("Sweet", "Indulgent")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.mango_sticky_rice,
+                title = "Mango Sticky Rice",
+                description = "A classic Thai dessert featuring sweet sticky rice and fresh mango slices.",
+                tags = listOf("Sweet", "Exotic")
             )
         )
 
         "Snacks" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.sweet_potato_fries,
+                title = "Sweet Potato Fries",
+                description = "Crispy and flavorful sweet potato fries seasoned with paprika.",
+                tags = listOf("Vegetarian", "Quick Snack")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.trail_mix_bites,
+                title = "Trail Mix Energy Bites",
+                description = "Nutritious and delicious no-bake bites packed with dried fruits and nuts.",
+                tags = listOf("Healthy", "Energy Boost")
             )
         )
 
-        "Favourites" -> listOf(
+        "Favorites" -> listOf(
             Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
+                imageRes = R.drawable.margherita_pizza,
+                title = "Margherita Pizza",
+                description = "A classic pizza topped with fresh tomatoes, mozzarella, and basil.",
+                tags = listOf("Vegetarian", "Comfort Food")
             ),
             Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
-            ),
-            Recipe(
-                imageRes = R.drawable.chocolate_smoothie,
-                title = "Chocolate Avocado Smoothie Bowl",
-                description = "A healthy chocolate temptation to start your day.",
-                tags = listOf("Vegetarian", "Gluten Free", "Sweet")
-            ),
-            Recipe(
-                imageRes = R.drawable.oatmeal_berries,
-                title = "Oatmeal with Fresh Berries",
-                description = "Delicious and nutritious breakfast option.",
-                tags = listOf("Fiber Rich", "Low Sugar")
+                imageRes = R.drawable.teriyaki_chicken_bowl,
+                title = "Teriyaki Chicken Bowl",
+                description = "Savory teriyaki chicken served over a bowl of steamed rice.",
+                tags = listOf("High Protein", "Comfort Food")
             )
         )
         else -> emptyList()
     }
 }
 
+//INI BELUM DIEDIT PUPULERNYAA
 @Composable
 fun PopularRecipes(navController: androidx.navigation.NavController) {
     Column(modifier = Modifier.padding(16.dp)) {
@@ -417,51 +362,129 @@ fun PopularRecipes(navController: androidx.navigation.NavController) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         RecipeCard(
-            imageRes = R.drawable.chocolate_smoothie,
-            title = "Chocolate Avocado Smoothie Bowl",
-            description = "Satisfy your morning appetite with this chocolate temptation",
-            tags = listOf("Vegetarian", "Gluten Free", "After Fasting", "Sweet"),
-            onClick = { navController.navigate("detail_recipe/Chocolate Avocado Smoothie Bowl") }
+            imageRes = R.drawable.spaghetti_aglio_olio,
+            title = "Spaghetti Aglio e Olio",
+            description = "A simple yet elegant Italian pasta dish featuring garlic, olive oil, and a touch of chili flakes for a delightful kick.",
+            tags = listOf("Vegetarian", "Quick Meal", "Comfort Food"),
+            onClick = { navController.navigate("detail_recipe/Spaghetti Aglio e Olio") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         RecipeCard(
-            imageRes = R.drawable.oatmeal_berries,
-            title = "Oatmeal with Fresh Berries",
-            description = "A healthy and tasty choice for your breakfast.",
-            tags = listOf("Vegetarian", "Low Sugar", "Fiber Rich"),
-            onClick = { navController.navigate("detail_recipe/Oatmeal with Fresh Berries") }
+            imageRes = R.drawable.margherita_pizza,
+            title = "Margherita Pizza",
+            description = "A timeless pizza classic with a crispy crust, tangy tomato sauce, melted mozzarella, and fresh basil leaves.",
+            tags = listOf("Vegetarian", "Comfort Food"),
+            onClick = { navController.navigate("detail_recipe/Margherita Pizza") }
         )
     }
 }
 
 @Composable
 fun DetailRecipePage(navController: androidx.navigation.NavController, recipeTitle: String) {
-    // Data resep berdasarkan recipeTitle
+    // ISI RESEP KALAU DI KLIK
     val recipeData = mapOf(
-        "Chocolate Avocado Smoothie Bowl" to Pair(
-            "Ingredients:\n- 1 ripe avocado\n- 1 banana\n- 1 cup milk\n- 1 tbsp honey\n- Ice cubes (optional)\n..." +
-                    "\n\nInstructions:\n1. Peel and slice the avocado and banana.\n2. Add all ingredients to a blender.\n3. Blend until smooth.\n4. Pour into a bowl and add toppings of your choice.\n...",
-            R.drawable.chocolate_smoothie
+        "Overnight Oats with Chia Seeds" to Pair(
+            "Ingredients:\n- 1/2 cup rolled oats\n- 1 cup almond milk (or any milk of choice)\n- 1 tablespoon chia seeds\n- 1 tablespoon honey or maple syrup\n- Fresh fruits (e.g., berries, banana slices)\n..." +
+                    "\n\nInstructions:\n1. In a mason jar, combine oats, almond milk, chia seeds, and honey. Mix well.\n2. Cover and refrigerate overnight, or for at least 6 hours.\n3. In the morning, stir the mixture and top it with fresh fruits before serving.",
+            R.drawable.overnight_oats
         ),
-        "Oatmeal with Fresh Berries" to Pair(
-            "Ingredients:\n- 2 cups rolled oats\n- 2 cups milk\n- 1 tbsp honey\n- 1 cup mixed berries (strawberries, blueberries, raspberries)\n..." +
-                    "\n\nInstructions:\n1. Bring the milk to a boil in a saucepan.\n2. Add oats and reduce heat to simmer.\n3. Cook for 5-7 minutes until thickened.\n4. Top with fresh berries and honey.\n...",
-            R.drawable.oatmeal_berries
+        "Classic Pancakes" to Pair(
+            "Ingredients:\n- 1 cup all-purpose flour\n- 1 cup milk\n- 1 egg\n- 2 tablespoons sugar\n- 1 teaspoon baking powder\n- 2 tablespoons melted butter\n..." +
+                    "\n\nInstructions:\n1. In a mixing bowl, whisk together flour, sugar, and baking powder.\n2. Add milk, egg, and melted butter. Mix until the batter is smooth.\n3. Heat a non-stick pan over medium heat and lightly grease it.\n4. Pour a ladle of batter onto the pan and cook until bubbles form on the surface. Flip and cook the other side until golden brown.\n5. Serve warm with syrup, fruits, or butter.",
+            R.drawable.classic_pancakes
         ),
-        // Other recipes...
+        "Grilled Lemon Herb Chicken" to Pair(
+            "Ingredients:\n- 2 chicken breasts\n- 2 tablespoons lemon juice\n- 1 tablespoon olive oil\n- 1 teaspoon minced garlic\n- 1 teaspoon dried rosemary\n- Salt and pepper to taste\n..." +
+                    "\n\nInstructions:\n1. In a bowl, mix lemon juice, olive oil, garlic, rosemary, salt, and pepper to make the marinade.\n2. Coat the chicken breasts with the marinade and let sit for 30 minutes.\n3. Preheat the grill or grill pan. Cook the chicken for 6-8 minutes on each side, or until fully cooked.\n4. Serve with vegetables or rice.",
+            R.drawable.grilled_lemon_chicken
+        ),
+        "Spaghetti Aglio e Olio" to Pair(
+            "Ingredients:\n- 200g spaghetti\n- 3 tablespoons olive oil\n- 3 garlic cloves (thinly sliced)\n- 1/2 teaspoon chili flakes\n- Fresh parsley (chopped)\n- Parmesan cheese (optional)\n..." +
+                    "\n\nInstructions:\n1. Boil spaghetti in salted water until al dente. Reserve some pasta water and drain the rest.\n2. Heat olive oil in a frying pan and sauté garlic until golden. Add chili flakes.\n3. Toss the spaghetti into the pan and mix well. Add a splash of reserved pasta water for extra moisture.\n4. Garnish with parsley and Parmesan cheese before serving.",
+            R.drawable.spaghetti_aglio_olio
+        ),
+        "Chocolate Lava Cake" to Pair(
+            "Ingredients:\n- 150g dark chocolate\n- 100g unsalted butter\n- 2 eggs\n- 1/3 cup sugar\n- 1/4 cup all-purpose flour\n..." +
+                    "\n\nInstructions:\n1. Preheat oven to 200°C (390°F). Grease ramekins with butter.\n2. Melt dark chocolate and butter in a microwave or double boiler.\n3. In a bowl, whisk eggs and sugar until frothy. Add melted chocolate mixture and mix well.\n4. Gently fold in flour until just combined.\n5. Pour batter into ramekins and bake for 10-12 minutes. The edges should be firm, but the center should be gooey.\n6. Let cool slightly before serving.",
+            R.drawable.chocolate_lava_cake
+        ),
+        "Mango Sticky Rice" to Pair(
+            "Ingredients:\n- 1 cup glutinous rice\n- 1 cup coconut milk\n- 1/4 cup sugar\n- 1 ripe mango, sliced\n..." +
+                    "\n\nInstructions:\n1. Steam the glutinous rice until fully cooked (about 20 minutes).\n2. Heat coconut milk and sugar in a saucepan over low heat until the sugar dissolves.\n3. Mix half of the coconut milk into the cooked rice. Let it rest for 10 minutes to absorb the flavor.\n4. Serve rice with sliced mango and drizzle the remaining coconut milk on top.",
+            R.drawable.mango_sticky_rice
+        ),
+        "Tomato Basil Soup" to Pair(
+            "Ingredients:\n- 5 ripe tomatoes, chopped\n- 1 medium onion, diced\n- 2 garlic cloves, minced\n- 2 cups vegetable broth\n- 1 tablespoon olive oil\n- Fresh basil leaves (for garnish)\n- Salt and pepper to taste\n..." +
+                    "\n\nInstructions:\n1. Heat olive oil in a pot. Sauté onion and garlic until fragrant.\n2. Add chopped tomatoes and cook for 5 minutes. Season with salt and pepper.\n3. Pour in vegetable broth and simmer for 20 minutes.\n4. Blend the mixture until smooth using a blender. Return to the pot to heat through.\n5. Serve in a bowl, garnished with fresh basil leaves.",
+            R.drawable.tomato_basil_soup
+        ),
+        "Caesar Salad" to Pair(
+            "Ingredients:\n- 1 head romaine lettuce, chopped\n- 1/2 cup croutons\n- 1/4 cup Parmesan cheese, grated\n- 3 tablespoons Caesar dressing\n..." +
+                    "\n\nInstructions:\n1. In a large bowl, toss romaine lettuce with Caesar dressing until evenly coated.\n2. Add croutons and grated Parmesan cheese. Toss gently.\n3. Serve chilled in individual portions.",
+            R.drawable.caesar_salad
+        ),
+        "Sweet Potato Fries" to Pair(
+            "Ingredients:\n- 2 sweet potatoes, cut into thin strips\n- 2 tablespoons olive oil\n- 1/2 teaspoon salt\n- 1/2 teaspoon paprika\n..." +
+                    "\n\nInstructions:\n1. Preheat oven to 200°C (390°F). Line a baking tray with parchment paper.\n2. Toss sweet potato strips with olive oil, salt, and paprika in a bowl.\n3. Spread the fries evenly on the tray and bake for 20-25 minutes, flipping halfway through.\n4. Serve warm with your favorite dip.",
+            R.drawable.sweet_potato_fries
+        ),
+        "Trail Mix Energy Bites" to Pair(
+            "Ingredients:\n- 1 cup rolled oats\n- 1/2 cup peanut butter\n- 1/4 cup honey\n- 1/4 cup dried fruits (e.g., raisins, cranberries)\n- 1/4 cup chocolate chips\n..." +
+                    "\n\nInstructions:\n1. Combine all ingredients in a mixing bowl. Stir until a sticky dough forms.\n2. Roll the mixture into small balls and place them on a baking sheet.\n3. Refrigerate for 1 hour to set.\n4. Store in an airtight container for up to a week.",
+            R.drawable.trail_mix_bites
+        ),
+        "Margherita Pizza" to Pair(
+            "Ingredients:\n- 1 pizza base\n- 1/2 cup tomato sauce\n- 1 cup mozzarella cheese, shredded\n- Fresh basil leaves\n..." +
+                    "\n\nInstructions:\n1. Preheat oven to 220°C (430°F).\n2. Spread tomato sauce evenly over the pizza base.\n3. Sprinkle mozzarella cheese and add basil leaves on top.\n4. Bake for 10-12 minutes, or until the cheese is melted and bubbly.\n5. Slice and serve warm.",
+            R.drawable.margherita_pizza
+        ),
+        "Teriyaki Chicken Bowl" to Pair(
+            "Ingredients:\n- 2 chicken thighs, cut into strips\n- 1/3 cup teriyaki sauce\n- 2 cups steamed rice\n- 1 tablespoon sesame seeds\n- 2 green onions, sliced\n..." +
+                    "\n\nInstructions:\n1. Heat a skillet and cook chicken strips until browned.\n2. Add teriyaki sauce and simmer for 5 minutes, coating the chicken.\n3. Serve over steamed rice, garnished with sesame seeds and green onions.",
+            R.drawable.teriyaki_chicken_bowl
+        )
     )
 
-    // Nutritional data for each recipe
+
+    // NUTRISI TIAP RESEP
     val nutritionalData = mapOf(
-        "Chocolate Avocado Smoothie Bowl" to NutritionalInfo(
-            carbohydrates = 35f, fat = 15f, protein = 5f, calories = 300
+        "Overnight Oats with Chia Seeds" to NutritionalInfo(
+            carbohydrates = 50f, fat = 7f, protein = 8f, calories = 250
         ),
-        "Oatmeal with Fresh Berries" to NutritionalInfo(
-            carbohydrates = 50f, fat = 8f, protein = 10f, calories = 350
+        "Classic Pancakes" to NutritionalInfo(
+            carbohydrates = 30f, fat = 8f, protein = 6f, calories = 220
         ),
-        // Add nutritional data for other recipes...
+        "Grilled Lemon Herb Chicken" to NutritionalInfo(
+            carbohydrates = 2f, fat = 8f, protein = 40f, calories = 250
+        ),
+        "Spaghetti Aglio e Olio" to NutritionalInfo(
+            carbohydrates = 60f, fat = 10f, protein = 12f, calories = 400
+        ),
+        "Chocolate Lava Cake" to NutritionalInfo(
+            carbohydrates = 25f, fat = 18f, protein = 4f, calories = 290
+        ),
+        "Mango Sticky Rice" to NutritionalInfo(
+            carbohydrates = 60f, fat = 5f, protein = 4f, calories = 300
+        ),
+        "Tomato Basil Soup" to NutritionalInfo(
+            carbohydrates = 18f, fat = 4f, protein = 2f, calories = 100
+        ),
+        "Caesar Salad" to NutritionalInfo(
+            carbohydrates = 10f, fat = 12f, protein = 5f, calories = 180
+        ),
+        "Sweet Potato Fries" to NutritionalInfo(
+            carbohydrates = 20f, fat = 7f, protein = 2f, calories = 150
+        ),
+        "Trail Mix Energy Bites" to NutritionalInfo(
+            carbohydrates = 15f, fat = 9f, protein = 5f, calories = 180
+        ),
+        "Margherita Pizza" to NutritionalInfo(
+            carbohydrates = 40f, fat = 12f, protein = 8f, calories = 280
+        ),
+        "Teriyaki Chicken Bowl" to NutritionalInfo(
+            carbohydrates = 50f, fat = 7f, protein = 25f, calories = 350
+        )
     )
-
     // Retrieve the recipe data based on the recipe title
     val (recipeText, imageResource) = recipeData[recipeTitle] ?: Pair("Recipe not found.", R.drawable.chocolate_smoothie)
     val nutritionalInfo = nutritionalData[recipeTitle] ?: NutritionalInfo(0f, 0f, 0f, 0)
@@ -471,12 +494,22 @@ fun DetailRecipePage(navController: androidx.navigation.NavController, recipeTit
         if (it.size == 2) it[0] to it[1] else "" to ""
     }
 
-    // Description for each recipe
+    // DESCRIPSI TIAP RESEP
     val recipeDescription = mapOf(
-        "Chocolate Avocado Smoothie Bowl" to "This smoothie bowl combines the creamy texture of avocado with the sweetness of banana and honey. It's a nutritious and delicious breakfast or snack option packed with healthy fats and fiber.",
-        "Oatmeal with Fresh Berries" to "A warm and hearty bowl of oatmeal topped with fresh berries. This dish is full of antioxidants and makes for a satisfying and wholesome breakfast.",
-        // Add descriptions for other recipes...
+        "Overnight Oats with Chia Seeds" to "A perfect blend of oats, chia seeds, and almond milk, this breakfast is packed with fiber and topped with fresh fruits for a delightful start to your day.",
+        "Classic Pancakes" to "Soft and fluffy pancakes, perfect with syrup, fruits, or butter for a sweet and satisfying breakfast.",
+        "Grilled Lemon Herb Chicken" to "Tender chicken breasts marinated in a zesty lemon herb blend, grilled to perfection for a flavorful and healthy main dish.",
+        "Spaghetti Aglio e Olio" to "A simple yet elegant Italian pasta dish featuring garlic, olive oil, and a touch of chili flakes for a delightful kick.",
+        "Chocolate Lava Cake" to "Indulge in a rich and gooey chocolate dessert with a molten center that melts in your mouth.",
+        "Mango Sticky Rice" to "A classic Thai dessert with sweet sticky rice, rich coconut milk, and fresh mango slices for a tropical delight.",
+        "Tomato Basil Soup" to "A comforting bowl of soup made with ripe tomatoes, fresh basil, and a hint of garlic, perfect for any season.",
+        "Caesar Salad" to "Crispy romaine lettuce tossed with creamy Caesar dressing, crunchy croutons, and grated Parmesan cheese for a classic salad experience.",
+        "Sweet Potato Fries" to "Golden and crispy sweet potato fries seasoned with paprika for a healthy and flavorful snack option.",
+        "Trail Mix Energy Bites" to "Nutritious and delicious no-bake bites made with oats, peanut butter, dried fruits, and chocolate chips, perfect for an energy boost.",
+        "Margherita Pizza" to "A timeless pizza classic with a crispy crust, tangy tomato sauce, melted mozzarella, and fresh basil leaves.",
+        "Teriyaki Chicken Bowl" to "Juicy chicken strips glazed in teriyaki sauce, served over steamed rice and garnished with sesame seeds and green onions for an irresistible meal."
     )
+
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {

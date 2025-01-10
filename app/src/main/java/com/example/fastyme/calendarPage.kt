@@ -29,14 +29,26 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 @Composable
 fun CalendarPage(navController: NavController) {
+
+//    val userId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val fastingHistory = remember { mutableStateOf(mapOf<LocalDate, Color>()) }
+
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            fetchFastingData(userId) { data ->
+                fastingHistory.value = data
+            }
+        }
+    }
+
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp) // Mengurangi padding agar kalender lebih lebar
+            .padding(horizontal = 8.dp)
             .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally // Pusatkan elemen dalam kolom
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         CalendarHeader { newMonth, newYear ->
@@ -45,7 +57,8 @@ fun CalendarPage(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        CalendarGrid(selectedDate) { newDate ->
+        // Pass fastingHistory to CalendarGrid
+        CalendarGrid(selectedDate, fastingHistory.value) { newDate ->
             selectedDate = newDate
         }
 
@@ -67,19 +80,6 @@ fun CalendarPage(navController: NavController) {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF673AB7),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Type of Fasting: OMAD",
-                        fontSize = 14.sp,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Time: 12 Hours",
-                        fontSize = 14.sp,
-                        color = Color.Black,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -138,9 +138,53 @@ fun CalendarHeader(onMonthChange: (Int, Int) -> Unit) {
     }
 }
 
+
+fun fetchFastingData(userId: String, callback: (Map<LocalDate, Color>) -> Unit) {
+//    val db = FirebaseFirestore.getInstance()
+    val dataMap = mutableMapOf<LocalDate, Color>()
+    val today = LocalDate.now()
+
+    // Fetch History
+    db.collection("Fasting Data").document(userId).collection("Dates")
+        .get()
+        .addOnSuccessListener { documents ->
+            for (document in documents) {
+                try {
+                    val dateString = document.id // Format: "yyyy-MM-dd"
+                    val date = LocalDate.parse(dateString)
+                    if (date.isBefore(today)) {
+                        dataMap[date] = Color.Yellow // Past fasting
+                    }
+                } catch (e: Exception) {
+                    // Log error
+                }
+            }
+
+            // Fetch Future Plan
+            db.collection("Fasting Schedule").document(userId).collection("Dates")
+                .get()
+                .addOnSuccessListener { scheduleDocuments ->
+                    for (scheduleDocument in scheduleDocuments) {
+                        try {
+                            val dateString = scheduleDocument.id // Format: "yyyy-MM-dd"
+                            val date = LocalDate.parse(dateString)
+                            if (date.isAfter(today)) {
+                                dataMap[date] = Color(0xFF6200EE) // Future fasting
+                            }
+                        } catch (e: Exception) {
+                            // Log error
+                        }
+                    }
+
+                    callback(dataMap) // Call callback after both queries complete
+                }
+        }
+}
+
 @Composable
 fun CalendarGrid(
     selectedDate: LocalDate?,
+    fastingHistory: Map<LocalDate, Color>,
     onDateSelected: (LocalDate) -> Unit
 ) {
     val today = LocalDate.now()
@@ -153,11 +197,11 @@ fun CalendarGrid(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp) // Mengurangi padding untuk membuat grid lebih lebar
+            .padding(horizontal = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly // Atur jarak secara proporsional
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
                 Text(
@@ -165,7 +209,7 @@ fun CalendarGrid(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f) // Pastikan semua elemen mendapatkan lebar sama
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -176,7 +220,7 @@ fun CalendarGrid(
         for (row in 0 until rows) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly // Elemen dalam setiap baris diratakan
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 for (col in 0..6) {
                     val cellIndex = row * 7 + col
@@ -184,14 +228,18 @@ fun CalendarGrid(
                         cellIndex - firstDayOfWeek + 1
                     } else null
 
+                    val currentDate = date?.let {
+                        LocalDate.of(currentYear, currentMonth, it)
+                    }
+                    val backgroundColor = fastingHistory[currentDate] ?: Color.Transparent
+
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .padding(2.dp) // Sesuaikan padding untuk memperlebar grid
+                            .padding(2.dp)
                             .background(
-                                color = if (date != null && selectedDate?.dayOfMonth == date) Color(0xFFBB86FC)
-                                else Color.Transparent,
+                                color = backgroundColor,
                                 shape = CircleShape
                             )
                             .clickable(enabled = date != null) {
@@ -231,7 +279,7 @@ fun GoalAccomplishedSection(navController: NavController) {
         )
 
         Button(
-            onClick = { navController.navigate(FASTING_PLAN) },
+            onClick = { navController.navigate("plan") },
             colors = ButtonDefaults.buttonColors(Color(0xFF6200EE)),
             modifier = Modifier
                 .width(100.dp)
@@ -243,25 +291,7 @@ fun GoalAccomplishedSection(navController: NavController) {
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
-
             )
-        }
-    }
-}
-
-@Composable
-fun MyApp() {
-    val navController = rememberNavController()
-    NavHost(navController, startDestination = "calendar") {
-        composable("calendar") { CalendarPage(navController) }
-        composable("plan") {
-            // Implementasi halaman "Plan"
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Plan Page", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            }
         }
     }
 }

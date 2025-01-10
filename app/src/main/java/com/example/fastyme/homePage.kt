@@ -257,6 +257,8 @@ fun FastingAppUI(navController: NavController) {
 
 
                     LaunchedEffect(fastingState.value.predictedEndTime) {
+                        if(fastingState.value.isFasting) {
+
                         while (remainingTime > 0) {
                             delay(1000L)
                             remainingTime = maxOf(predictedEndTime - System.currentTimeMillis(), 0L)
@@ -271,6 +273,8 @@ fun FastingAppUI(navController: NavController) {
                             }
                             fetchDataFasting(fastingState, fastingState.value.startTime)
                         }
+                        }
+
                     }
 
                     val hours = (remainingTime / (1000 * 60 * 60)).toInt()
