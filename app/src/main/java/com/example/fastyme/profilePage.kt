@@ -577,9 +577,9 @@ fun waterIntake() {
 fun memberTeam() {
     CardBoxTeam(
         content = {
-            Column() {
+//            Column() {
                 teamMemberPage()
-            }
+//            }
         }
     )
 }
@@ -646,7 +646,7 @@ fun CardBoxTeam(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(400.dp)
             .shadow(4.dp, RoundedCornerShape(20.dp))
             .background(Color(0xFFD9C2EC), RoundedCornerShape(20.dp))
             .padding(16.dp)
