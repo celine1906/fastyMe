@@ -176,34 +176,6 @@ class MainActivity : ComponentActivity() {
                     .value?.destination?.route
 
                 Scaffold(
-                    topBar = {
-                        // Sembunyikan TopAppBar di halaman login dan register
-                        if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE) {
-                            CenterAlignedTopAppBar(
-                                title = {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 8.dp), // Tambahkan padding untuk menggeser ke bawah
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.logofastyme),
-                                            contentDescription = "Logo FastyMe",
-                                            modifier = Modifier
-                                                .size(100.dp) // Ukuran logo
-                                                .padding(top = 4.dp) // Menggeser logo lebih ke bawah
-                                        )
-                                    }
-                                },
-                                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                    containerColor = Color(0xFF5624C4),
-                                    titleContentColor = Color.White
-                                )
-                            )
-                        }
-                    },
                     bottomBar = {
                         // Sembunyikan BottomNavBar di halaman login dan register
                         if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE) {
