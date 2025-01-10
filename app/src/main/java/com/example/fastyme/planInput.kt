@@ -62,7 +62,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                     color = Color(0xFF4CAF50)
                 )
                 Text(
-                    text = "Puasa ${time?.split(":")?.get(0)} jam dan makan ${time?.split(":")?.get(1)} jam",
+                    text = "Fasting for ${time?.split(":")?.get(0)} hours and eating for  ${time?.split(":")?.get(1)} hours",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -93,7 +93,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Awal", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Start", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                     Text(text = startDateTime, fontSize = 16.sp, color = Color.Black)
                     IconButton(onClick = { isStartDateTimePickerVisible = true }) {
@@ -117,7 +117,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Akhir", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("End", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                     Text(text = endDateTime, fontSize = 16.sp, color = Color.Black)
                     IconButton(onClick = { isEndDateTimePickerVisible = true }) {
@@ -138,7 +138,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
         ) {
             Column {
                 Text(
-                    text = "Persiapan Puasa",
+                    text = "Fasting Preparation",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -155,7 +155,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Makan cukup protein seperti daging, tahu, ikan, dan kacang-kacangan.",
+                            text = "Eat sufficient protein such as meat, tofu, fish, and nuts.",
                             fontSize = 14.sp,
                             color = Color.Black
                         )
@@ -170,7 +170,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Minum banyak air.",
+                            text = "Drink plenty of water.",
                             fontSize = 14.sp,
                             color = Color.Black
                         )
@@ -185,7 +185,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Makan makanan berserat tinggi seperti buah-buahan dan sayuran.",
+                            text = "Eat high-fiber foods like fruits and vegetables.",
                             fontSize = 14.sp,
                             color = Color.Black
                         )
@@ -200,7 +200,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Tidur yang cukup di malam hari.",
+                            text = "Avoid processed and sugary foods.",
                             fontSize = 14.sp,
                             color = Color.Black
                         )
@@ -215,7 +215,7 @@ fun PlanInputPage(navController: NavController, time: String?) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Hindari makanan olahan dan makanan manis.",
+                            text = "Get enough sleep at night.",
                             fontSize = 14.sp,
                             color = Color.Black
                         )
@@ -226,18 +226,25 @@ fun PlanInputPage(navController: NavController, time: String?) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                val todayDate = LocalDate.now().toString()
-                val fastingType = time ?: "12:12"
-                val duration = fastingType.split(":")[0].toIntOrNull() ?: 0
-                saveFastingPlanToFirebase(userId, todayDate, fastingType, startDateTime, endDateTime, duration, "Fasting schedule")
-                navController.navigateUp()
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Mulai Puasa", color = Color.White)
+            Button(
+                onClick = {
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    val todayDate = LocalDate.now().toString()
+                    val fastingType = time ?: "12:12"
+                    val duration = fastingType.split(":")[0].toIntOrNull() ?: 0
+                    saveFastingPlanToFirebase(userId, todayDate, fastingType, startDateTime, endDateTime, duration, "Fasting schedule")
+                    navController.navigateUp()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+            ) {
+                Text("Start Fasting", color = Color.White)
+            }
         }
 
         // Menampilkan Dialog untuk Waktu Mulai
