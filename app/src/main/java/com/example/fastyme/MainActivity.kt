@@ -166,7 +166,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             FastyMeTheme {
                 val navController = rememberNavController()
-
                 // Periksa rute aktif
                 val currentRoute = navController.currentBackStackEntryFlow
                     .collectAsState(initial = navController.currentBackStackEntry)

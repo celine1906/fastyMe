@@ -390,7 +390,7 @@ suspend fun modelCall(prompt: String): String {
     return try {
         val generativeModel = GenerativeModel(
             modelName = "gemini-1.5-flash",
-            apiKey = "AIzaSyBqK46pVY1OzQkdbKiW39kBVKYfuTc1yiU",
+            apiKey = "AIzaSyCnT1SCfEDNqAQnRcIVHVDnBsqSUXMd6tw",
             generationConfig { mapOf("response_mime_type" to "application/json") }
         )
         val generatePrompt = """

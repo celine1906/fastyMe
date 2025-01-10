@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.fastyme.ui.theme.MontserratFamily
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -1267,7 +1268,7 @@ data class Recommendation(
 )
 
 @Composable
-fun GeminiRecommendation(userId: String) {
+fun GeminiRecommendation(navController: androidx.navigation.NavHostController, userId: String) {
     val context = LocalContext.current
     var recommendation by remember { mutableStateOf("Fetching recommendation...") }
     var recommendationData by remember { mutableStateOf<Recommendation?>(null) }
@@ -1277,7 +1278,7 @@ fun GeminiRecommendation(userId: String) {
         fetchAnswers(userId) { answers ->
             val generativeModel = GenerativeModel(
                 modelName = "gemini-1.5-flash",
-                apiKey = "AIzaSyBqK46pVY1OzQkdbKiW39kBVKYfuTc1yiU"
+                apiKey = "AIzaSyCnT1SCfEDNqAQnRcIVHVDnBsqSUXMd6tw"
             )
 
             val prompt = """
@@ -1460,6 +1461,18 @@ fun GeminiRecommendation(userId: String) {
                         )
                     )
                 }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    navController.navigate("home")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text(text = "Start Journey", fontSize = 18.sp, color = Color.White)
             }
         }
     }

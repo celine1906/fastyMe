@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -19,11 +20,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -53,8 +58,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
 import co.yml.charts.axis.AxisData
 import co.yml.charts.ui.linechart.LineChart
@@ -68,7 +75,11 @@ import co.yml.charts.ui.linechart.model.LineType
 import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
 import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
 import co.yml.charts.ui.linechart.model.ShadowUnderLine
+import com.example.fastyme.ui.theme.MontserratFamily
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
@@ -92,11 +103,12 @@ fun ProfilePage(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 profile(userId.toString(), navController)
-                recommendation()
+                recommendation(userId.toString(), navController)
                 plan()
                 achievement()
                 calorieIntake()
                 waterIntake()
+                memberTeam()
             }
         }
     }
@@ -349,7 +361,7 @@ fun title(str: String, imageResId: Int) {
 }
 
 @Composable
-fun recommendation() {
+fun recommendation(userId: String, navController:NavController) {
     CardBox(
         content = {
             Row(
@@ -358,12 +370,151 @@ fun recommendation() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 title("Recommendation", R.drawable.plan)
-                Button(onClick = {}) {
+                Button(onClick = {navController.navigate("geminipage")}) {
                     Text("See recommendation")
                 }
             }
         }
     )
+}
+
+fun fetchRecommendation(userId: String, onSuccess: (Recommendation?) -> Unit, onFailure: (String) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+
+    // Mendapatkan dokumen berdasarkan userId dari koleksi "recommendations"
+    db.collection("recommendations")
+        .document(userId)
+        .get()
+        .addOnSuccessListener { documentSnapshot ->
+            if (documentSnapshot.exists()) {
+                // Ambil data rekomendasi dari Firestore
+                val fastingType = documentSnapshot.getString("fastingType")
+                val fastingDescription = documentSnapshot.getString("fastingDescription")
+                val calorieIntake = documentSnapshot.getLong("calorieIntake")?.toInt()
+                val waterIntake = documentSnapshot.getLong("waterIntake")?.toInt()
+                val fastingSchedule = documentSnapshot.getString("fastingSchedule")
+                val eatingSchedule = documentSnapshot.getString("eatingSchedule")
+
+                // Membuat objek Recommendation dari data yang diambil
+                val recommendation = Recommendation(
+                    fastingType = fastingType ?: "",
+                    fastingDescription = fastingDescription ?: "",
+                    calorieIntake = calorieIntake ?: 0,
+                    waterIntake = waterIntake ?: 0,
+                    fastingSchedule = fastingSchedule ?: "",
+                    eatingSchedule = eatingSchedule ?: ""
+                )
+
+                // Memanggil onSuccess callback dengan data rekomendasi yang diambil
+                onSuccess(recommendation)
+            } else {
+                // Jika dokumen tidak ada
+                onFailure("Recommendation not found")
+            }
+        }
+        .addOnFailureListener { exception ->
+            // Jika ada error saat mengambil data
+            onFailure("Error fetching recommendation: ${exception.message}")
+        }
+}
+
+@Composable
+fun geminipage (userId: String, navController:NavController) {
+    var recommendations by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Recommendation Program",
+            style = TextStyle(
+                fontFamily = MontserratFamily,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFFFFFFF),
+                letterSpacing = 1.5.sp
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
+        )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Fasting Type: ${recommendations["fastingType"] ?: "N/A"}",
+                    style = TextStyle(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp
+                    ),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Fasting Description: ${recommendations["fastingDescription"] ?: "N/A"}",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Calorie Intake: ${recommendations["calorieIntake"] ?: "N/A"} kcal/day",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Water Intake: ${recommendations["waterIntake"] ?: "N/A"} ml/day",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Fasting Schedule: ${recommendations["fastingSchedule"] ?: "N/A"}",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Eating Schedule: ${recommendations["eatingSchedule"] ?: "N/A"}",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                navController.navigate("ProfilePage")
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text(text = "Back", fontSize = 18.sp, color = Color.White)
+        }
+    }
 }
 
 @Composable
@@ -420,6 +571,88 @@ fun waterIntake() {
             }
         }
     )
+}
+
+@Composable
+fun memberTeam() {
+    CardBoxTeam(
+        content = {
+            Column() {
+                teamMemberPage()
+            }
+        }
+    )
+}
+
+@Composable
+fun teamMemberPage() {
+    val teamMembers = listOf(
+        R.drawable.team1,
+        R.drawable.team2,
+        R.drawable.team3,
+        R.drawable.team4
+    )
+    val pagerState = rememberPagerState()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF5624C4),
+                        Color(0xFF29115E)
+                    )
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Meet Our Team!",
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = MontserratFamily,
+                modifier = Modifier.padding(top = 25.dp)
+            )
+
+            // Horizontal Pager for Team Members
+            HorizontalPager(
+                count = teamMembers.size,
+                modifier = Modifier.weight(1f)
+            )
+            { page ->
+                Image(
+                    painter = painterResource(id = teamMembers[page]),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .fillMaxWidth()
+                        .aspectRatio(0.883f),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CardBoxTeam(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .shadow(4.dp, RoundedCornerShape(20.dp))
+            .background(Color(0xFFD9C2EC), RoundedCornerShape(20.dp))
+            .padding(16.dp)
+    ) {
+        content()
+    }
 }
 
 @Composable
