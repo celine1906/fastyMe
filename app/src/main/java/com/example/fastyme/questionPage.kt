@@ -210,20 +210,16 @@ fun Page2 (navController: androidx.navigation.NavHostController, userAnswers: Mu
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background (
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF5624C4),
+                        Color(0xFF29115E)
+                    )
+                )
+            )
     ) {
         item {
-            Box (
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background (
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF5624C4),
-                                Color(0xFF29115E)
-                            )
-                        )
-                    )
-            )
             Column (
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
