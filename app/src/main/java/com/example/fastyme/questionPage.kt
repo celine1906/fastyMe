@@ -79,7 +79,6 @@ fun saveAnswerToFirestore(
     question: String,
     answer: String
 ) {
-    val db = Firebase.firestore
     val answerData = hashMapOf(
         "question" to question,
         "answer" to answer
@@ -208,110 +207,118 @@ fun Page1(navController: androidx.navigation.NavHostController, userAnswers: Mut
 @Composable
 fun Page2 (navController: androidx.navigation.NavHostController, userAnswers: MutableState<MutableList<String>>){
     val selectedOption = remember { mutableStateOf("") }
-    Box (
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background (
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF5624C4),
-                        Color(0xFF29115E)
-                    )
-                )
-            )
-    )
-    Column (
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.page2),
-            contentDescription = null,
-            modifier = Modifier.width(185.dp).height(277.dp)
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        color = Color.White,
-                        fontSize = 20.sp
+        item {
+            Box (
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background (
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF5624C4),
+                                Color(0xFF29115E)
+                            )
+                        )
                     )
-                ) {
-                    append("How familiar are you \n with ")
-                }
-                append("fasting")
-                withStyle(
-                    style = SpanStyle(
-                        color = Color.White,
-                        fontSize = 20.sp
-                    )
-                ) {
-                    append(" ?")
-                }
-            },
+            )
+            Column (
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.page2),
+                    contentDescription = null,
+                    modifier = Modifier.width(185.dp).height(277.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(
+                                color = Color.White,
+                                fontSize = 20.sp
+                            )
+                        ) {
+                            append("How familiar are you \n with ")
+                        }
+                        append("fasting")
+                        withStyle(
+                            style = SpanStyle(
+                                color = Color.White,
+                                fontSize = 20.sp
+                            )
+                        ) {
+                            append(" ?")
+                        }
+                    },
 //            "What is your main goal for \n" +
 //                    "doing intermittent fasting?",
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            color = Color(0xFFDB00FF),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = MontserratFamily,
-            textAlign = TextAlign.Center,
-        )
-        val options = listOf("I'm new to fasting and need guidance", "I've tried it a few times but \n" +
-                " need more information", "I'm experienced with fasting and \n" +
-                " just need tracking tools")
-        options.forEach { option ->
-            OutlinedButton(
-                onClick = { selectedOption.value = option },
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .height(90.dp),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = if (selectedOption.value == option) Color(0xFFDB00FF) else Color.Transparent
-                )
-            ) {
-                Text(
-                    text = option,
-                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    color = Color(0xFFDB00FF),
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.ExtraBold,
                     fontFamily = MontserratFamily,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
+                val options = listOf("I'm new to fasting and need guidance", "I've tried it a few times but \n" +
+                        " need more information", "I'm experienced with fasting and \n" +
+                        " just need tracking tools")
+                options.forEach { option ->
+                    OutlinedButton(
+                        onClick = { selectedOption.value = option },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .height(90.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = if (selectedOption.value == option) Color(0xFFDB00FF) else Color.Transparent
+                        )
+                    ) {
+                        Text(
+                            text = option,
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = MontserratFamily,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                Button(
+                    onClick = {
+                        if (selectedOption.value.isNotEmpty()) {
+                            saveAnswerToFirestore(
+                                userId = userId,
+                                questionId = "fastingFamiliarity",
+                                question = "How familiar are you with fasting?",
+                                answer = selectedOption.value
+                            )
+                            navController.navigate("page3")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .width(222.dp)
+                        .height(58.dp)
+                ) {
+                    Text(
+                        "Next",
+                        color = Color(0XFF663090),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = MontserratFamily
+                    )
+                }
+
             }
         }
-        Button(
-            onClick = {
-                if (selectedOption.value.isNotEmpty()) {
-                    saveAnswerToFirestore(
-                        userId = userId,
-                        questionId = "fastingFamiliarity",
-                        question = "How familiar are you with fasting?",
-                        answer = selectedOption.value
-                    )
-                    navController.navigate("page3")
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-            modifier = Modifier
-                .padding(16.dp)
-                .width(222.dp)
-                .height(58.dp)
-        ) {
-            Text(
-                "Next",
-                color = Color(0XFF663090),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = MontserratFamily
-            )
-        }
-
     }
+
 }
 
 @Composable
@@ -1466,7 +1473,7 @@ fun GeminiRecommendation(navController: androidx.navigation.NavHostController, u
 
             Button(
                 onClick = {
-                    navController.navigate("home")
+                    navController.navigate(HOME_ROUTE)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

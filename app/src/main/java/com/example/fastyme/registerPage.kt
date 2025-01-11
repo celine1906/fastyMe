@@ -150,7 +150,7 @@ fun RegisterPage(
                         }
                         else -> {
                             authViewModel.register(email.value, password.value, name.value) // Tambahkan name.value di sini
-                            navController.navigate("loginPage") {
+                            navController.navigate("questionPage") {
                                 popUpTo("registerPage") { inclusive = true }
                             }
                         }

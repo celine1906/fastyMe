@@ -18,8 +18,11 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -159,6 +162,49 @@ fun BottomNavBar(navController: NavHostController) {
     }
 }
 
+@Composable
+fun NavHostQuestion(userAnswers: MutableState<MutableList<String>>) {
+    userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "page1") {
+        composable("page1") {
+            Page1(navController, userAnswers)
+        }
+        composable("page2") {
+            Page2(navController, userAnswers)
+        }
+        composable("page3") {
+            Page3(navController, userAnswers)
+        }
+        composable("page4") {
+            Page4(navController, userAnswers)
+        }
+        composable("page5") {
+            Page5(navController, userAnswers)
+        }
+        composable("page6") {
+            Page6(navController, userAnswers)
+        }
+        composable("page7") {
+            Page7(navController, userAnswers)
+        }
+        composable("page8") {
+            Page8(navController, userAnswers)
+        }
+        composable("page9") {
+            Page9(navController, userAnswers)
+        }
+        composable("page10") {
+            Page10(navController, userAnswers)
+        }
+        composable("recommendation") {
+            GeminiRecommendation(navController, userId)
+        }
+    }
+}
+
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,6 +215,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FastyMeTheme {
                 val navController = rememberNavController()
+                val userAnswers = remember { mutableStateOf(mutableListOf<String>()) }
                 // Periksa rute aktif
                 val currentRoute = navController.currentBackStackEntryFlow
                     .collectAsState(initial = navController.currentBackStackEntry)
@@ -177,7 +224,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         // Sembunyikan BottomNavBar di halaman login dan register
-                        if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE) {
+                        if (currentRoute != LOGIN_ROUTE && currentRoute != REGISTER_ROUTE && currentRoute!="questionPage") {
                             BottomNavBar(navController)
                         }
                     }
@@ -203,6 +250,7 @@ class MainActivity : ComponentActivity() {
                                 authViewModel = authViewModel
                             )
                         }
+                        composable("questionPage") { NavHostQuestion(userAnswers) }
                         composable(HOME_ROUTE) {
                             FastingAppUI(navController = navController)
                         }

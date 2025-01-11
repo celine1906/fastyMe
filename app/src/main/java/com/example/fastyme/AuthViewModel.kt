@@ -69,7 +69,7 @@ class AuthViewModel : ViewModel() {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid ?: ""
+                    userId = auth.currentUser?.uid ?: ""
                     fetchDataWater()
                     Log.d("AuthViewModel", "Registration successful for UID: $userId") // Tambahkan log di sini
                     saveUserName(userId, name) // Simpan nama pengguna ke Firestore
