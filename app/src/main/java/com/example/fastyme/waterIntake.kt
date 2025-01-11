@@ -73,7 +73,7 @@ val today = LocalDate.now()
 val todayString = today.format(DateTimeFormatter.ISO_DATE)
 
 
-@Composable
+//@Composable
 fun fetchDataWater() {
         db.collection("Water Intake")
             .document("${userId}_$todayString")
