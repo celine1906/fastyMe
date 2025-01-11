@@ -50,7 +50,7 @@ const val LOGIN_ROUTE = "loginPage"
 const val REGISTER_ROUTE = "registerPage"
 const val FASTING_INPUT = "planInput/{time}"
 
-val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+var userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
 //val user = FirebaseAuth.getInstance().currentUser
 //val userId = user?.uid ?: "guest"

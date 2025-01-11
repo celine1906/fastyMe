@@ -11,9 +11,6 @@ import com.google.firebase.firestore.SetOptions
 
 class AuthViewModel : ViewModel() {
 
-    companion object {
-        var userId: String? = null
-    }
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -24,6 +21,7 @@ class AuthViewModel : ViewModel() {
 
     init {
         checkAuthStatus()
+        userId = auth.currentUser?.uid.toString()
     }
 
     private fun checkAuthStatus() {
@@ -32,14 +30,6 @@ class AuthViewModel : ViewModel() {
         } else {
             _authState.value = AuthState.Authenticated
         }
-    }
-
-    init {
-        userId = getAuthenticatedUserId()
-    }
-
-    private fun getAuthenticatedUserId(): String? {
-        return auth.currentUser?.uid
     }
 
     fun login(email: String, password: String) {
@@ -55,6 +45,8 @@ class AuthViewModel : ViewModel() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    userId = auth.currentUser?.uid.toString()
+                    fetchDataWater()
                     Log.d("AuthViewModel", "Login successful for Email: $email")
                     _authState.value = AuthState.Authenticated
                 } else {
@@ -78,6 +70,7 @@ class AuthViewModel : ViewModel() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val userId = auth.currentUser?.uid ?: ""
+                    fetchDataWater()
                     Log.d("AuthViewModel", "Registration successful for UID: $userId") // Tambahkan log di sini
                     saveUserName(userId, name) // Simpan nama pengguna ke Firestore
                     _authState.value = AuthState.Authenticated
